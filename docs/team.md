@@ -7,10 +7,10 @@ title:  Team
 
 
 ## USER 1
-***UCI Net ID***: ucinetid1
+***Vaanya Gupta***: vaanyag
 
 ## USER 2
-***UCI Net ID***: ucinetid2
+***Raymond Ouyang***: raymono1
 
 ## USER 3
-***UCI Net ID***: ucinetid3
+***Benjamin Jacob Roth***: vaanyag
