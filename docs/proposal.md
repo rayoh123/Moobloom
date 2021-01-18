@@ -1,6 +1,6 @@
 ---
 layout: default
-title:  Proposal
+title:  PROPOSAL
 ---
 
 ## Summary of the Project
