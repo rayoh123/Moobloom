@@ -13,4 +13,4 @@ stuff
 stuff
 
 ## Appointment with the Instructor
-stuff
+Thursday (January 21, 2021) - 12:30 pm
