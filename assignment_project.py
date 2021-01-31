@@ -21,17 +21,20 @@ class DiamondCollector(gym.Env):
 
     def __init__(self, env_config):  
         # Static Parameters
-        self.size = 50
+        self.size = 10
         self.reward_density = .1
         self.penalty_density = .02
         self.obs_size = 5
         self.max_episode_steps = 100
-        self.log_frequency = 10
+        self.log_frequency = 1
         self.action_dict = {
             0: 'move 1',  # Move one block forward
             1: 'turn 1',  # Turn 90 degrees to the right
             2: 'turn -1',  # Turn 90 degrees to the left
-            3: 'attack 1'  # Destroy block
+##            3: 'attack 1'  # Destroy block (Let's comment this command out for our sanity check to make it simpler.)
+##                             We will add this and more commands later once we get our sanity check working.
+##                             Right now, our sanity check will involve the agent simply trying to run away from the zombies
+                                             
         }
         # Rllib Parameters
 
@@ -123,15 +126,19 @@ class DiamondCollector(gym.Env):
 
     def get_mission_xml(self):
 
-        XML_zombies = ""
+        XML_zombies = []
+        zombie_locations = set()
   
-        for i in range (1000):
-            x = random.randint(-self.max_episode_steps,self.max_episode_steps)
-            z = random.randint(-self.max_episode_steps,self.max_episode_steps)
-            XML_STR = "<DrawEntity x='"+str(x)+"' y='2' z='"+str(z)+"' type='Zombie' />"
-            XML_zombies += XML_STR
+        for i in range(1):
+            x = random.randint(-self.size,self.size + 1)
+            z = random.randint(-self.size,self.size + 1)
+            while (x,z) in zombie_locations:
+                x = random.randint(-self.size,self.size + 1)
+                z = random.randint(-self.size,self.size + 1)
+            zombie_locations.add((x,z))
+            XML_zombies.append("<DrawEntity x='"+str(x)+"' y='2' z='"+str(z)+"' type='Zombie' />")
         
-        My_XML = XML_zombies
+        My_XML = ''.join(XML_zombies)
 
         return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -143,8 +150,9 @@ class DiamondCollector(gym.Env):
                     <ServerSection>
                         <ServerInitialConditions>
                             <Time>
-                                <StartTime>12000</StartTime>
+                                <StartTime>18000</StartTime>
                                 <AllowPassageOfTime>false</AllowPassageOfTime>
+                                <AllowSpawning>false</AllowSpawning>
                             </Time>
                             <Weather>clear</Weather>
                         </ServerInitialConditions>
@@ -170,12 +178,8 @@ class DiamondCollector(gym.Env):
                             </Inventory>
                         </AgentStart>
                         <AgentHandlers>
-                            <RewardForTimeTaken>
-                                initialReward="10"
-                                delta="+1"
-                                density="RewardDensityForTimeTaken"
-                            </RewardForTimeTaken>
-                            <ContinuousMovementCommands/> 
+                            <RewardForTimeTaken initialReward="10" delta="+1" density="PER_TICK" />
+                            <DiscreteMovementCommands/> 
                             <ObservationFromFullStats/>
                             <ObservationFromRay/>
                             <ObservationFromGrid>
@@ -184,9 +188,8 @@ class DiamondCollector(gym.Env):
                                     <max x="'''+str(int(self.obs_size/2))+'''" y="0" z="'''+str(int(self.obs_size/2))+'''"/>
                                 </Grid>
                             </ObservationFromGrid>
-                            <AgentQuitFromReachingCommandQuota total="'''+str(self.max_episode_steps)+'''" />
                             <AgentQuitFromTouchingBlockType>
-                                <Block type="bedrock" />
+                                <Block type="grass" />
                             </AgentQuitFromTouchingBlockType>
                         </AgentHandlers>
                     </AgentSection>
