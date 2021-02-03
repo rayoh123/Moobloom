@@ -177,6 +177,14 @@ class DiamondCollector(gym.Env):
                             </Inventory>
                         </AgentStart>
                         <AgentHandlers>
+                            <ObservationFromNearbyEntities>
+                                <Range> 
+                                    name="Zombie"
+                                    xrange="10"
+                                    yrange="1"
+                                    zrange="10"> 
+                                </Range>
+                            </ObservationFromNearbyEntities>
                             <RewardForTouchingBlockType>
                                 <Block type='dirt' reward='-1'/>
                             </RewardForTouchingBlockType>
