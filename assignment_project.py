@@ -25,9 +25,9 @@ class DiamondCollector(gym.Env):
         self.size = 10
         self.reward_density = .1
         self.penalty_density = .02
-        self.obs_size = 5
+        self.obs_size = 9
         self.max_episode_steps = 100
-        self.log_frequency = 1
+        self.log_frequency = 10
         self.action_dict = {
             0: 'move 1',  # Move one block forward
             1: 'turn 1',  # Turn 90 degrees to the right
@@ -40,7 +40,7 @@ class DiamondCollector(gym.Env):
         # Rllib Parameters
 
         self.action_space =  Discrete(len(self.action_dict)) 
-        self.observation_space = Box(0, 1, shape=(2 * self.obs_size * self.obs_size, ), dtype=np.float32)
+        self.observation_space = Box(0, 1, shape=(self.obs_size * self.obs_size, ), dtype=np.float32)
 
         # Malmo Parameters
         self.agent_host = MalmoPython.AgentHost()
@@ -53,6 +53,8 @@ class DiamondCollector(gym.Env):
 
         # DiamondCollector Parameters
         self.num_zombies = 5
+        self.damage_taken_so_far = 0
+        self.new_damage_taken = 0
         self.obs = None
         self.episode_step = 0
         self.episode_return = 0
@@ -110,7 +112,7 @@ class DiamondCollector(gym.Env):
         world_state = self.agent_host.getWorldState()
         for error in world_state.errors:
             print("Error:", error.text)
-        self.obs= self.get_observation(world_state) 
+        self.obs = self.get_observation(world_state) 
 
         # Get Done
         done = not world_state.is_mission_running 
@@ -119,29 +121,31 @@ class DiamondCollector(gym.Env):
         reward = 0
         for r in world_state.rewards:
             reward += r.getValue()
+        reward -= self.new_damage_taken
         self.episode_return += reward
+        
 
         return self.obs, reward, done, dict()
 
     def get_mission_xml(self):
-        # Draw walls around the arena
-        # Draw west wall
-        west_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, -self.size-1, self.size, -self.size) + \
-                        "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, -self.size-1, self.size, -self.size)
-                        
-        east_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='stone'/>".format(self.size+1, self.size+1, self.size, -self.size) + \
-                        "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='stone'/>".format(self.size+1, self.size+1, self.size, -self.size)
-
-        north_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, self.size+1, self.size, self.size) + \
-                         "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, self.size+1, self.size, self.size)
-                         
-        south_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, self.size+1, -self.size, -self.size) + \
-                         "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, self.size+1, -self.size, -self.size)
+#         # Draw walls around the arena
+#         # Draw west wall
+#         west_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, -self.size-1, self.size, -self.size) + \
+#                         "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, -self.size-1, self.size, -self.size)
+#                         
+#         east_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='stone'/>".format(self.size+1, self.size+1, self.size, -self.size) + \
+#                         "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='stone'/>".format(self.size+1, self.size+1, self.size, -self.size)
+# 
+#         north_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, self.size+1, self.size, self.size) + \
+#                          "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, self.size+1, self.size, self.size)
+#                          
+#         south_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, self.size+1, -self.size, -self.size) + \
+#                          "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, self.size+1, -self.size, -self.size)
 
 
         zombies_xml = []
         zombie_locations = set()
-  
+   
         for i in range(self.num_zombies):
             x = random.randint(-self.size,self.size + 1)
             z = random.randint(-self.size,self.size + 1)
@@ -150,7 +154,7 @@ class DiamondCollector(gym.Env):
                 z = random.randint(-self.size,self.size + 1)
             zombie_locations.add((x,z))
             zombies_xml.append("<DrawEntity x='"+str(x)+"' y='2' z='"+str(z)+"' type='Zombie' />")
-        
+         
         zombies_xml = ''.join(zombies_xml)
 
         return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
@@ -163,7 +167,7 @@ class DiamondCollector(gym.Env):
                     <ServerSection>
                         <ServerInitialConditions>
                             <Time>
-                                <StartTime>13000</StartTime>
+                                <StartTime>18000</StartTime>
                                 <AllowPassageOfTime>false</AllowPassageOfTime>
                             </Time>
                             <Weather>clear</Weather>
@@ -174,13 +178,8 @@ class DiamondCollector(gym.Env):
                             <DrawingDecorator>''' + \
                                 "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='air'/>".format(-self.size, self.size, -self.size, self.size) + \
                                 "<DrawCuboid x1='{}' x2='{}' y1='1' y2='1' z1='{}' z2='{}' type='stone'/>".format(-self.size, self.size, -self.size, self.size) + \
-                                west_wall_xml + \
-                                east_wall_xml + \
-                                north_wall_xml + \
-                                south_wall_xml + \
                                 zombies_xml + \
                                 '''<DrawBlock x='0'  y='2' z='0' type='air' />
-                                <DrawBlock x='0'  y='1' z='0' type='stone' />
                             </DrawingDecorator>
                             <ServerQuitWhenAnyAgentFinishes/>
                         </ServerHandlers>
@@ -196,9 +195,9 @@ class DiamondCollector(gym.Env):
                         </AgentStart>
                         <AgentHandlers>
                             <ObservationFromNearbyEntities>
-                                <Range name="Zombie" xrange="2" yrange="1" zrange="2"/>
+                                <Range name="Zombie" xrange="4" yrange="1" zrange="4"/>
                             </ObservationFromNearbyEntities>
-                            <RewardForTimeTaken initialReward="10" delta="+1" density="PER_TICK" />
+                            <RewardForTimeTaken initialReward="10" delta="+0.05" density="PER_TICK" />
                             <DiscreteMovementCommands/> 
                             <ObservationFromFullStats/>
                             <ObservationFromRay/>
@@ -208,7 +207,6 @@ class DiamondCollector(gym.Env):
                                     <max x="'''+str(int(self.obs_size/2))+'''" y="0" z="'''+str(int(self.obs_size/2))+'''"/>
                                 </Grid>
                             </ObservationFromGrid>
-                            <AgentQuitFromReachingCommandQuota total="'''+str(self.max_episode_steps)+'''" />
                         </AgentHandlers>
                     </AgentSection>
                 </Mission>'''
@@ -257,9 +255,10 @@ class DiamondCollector(gym.Env):
         Returns
             observation: <np.array> the state observation
         """
-        obs = np.zeros((2 * self.obs_size * self.obs_size, ))
+        obs = np.zeros((self.obs_size * self.obs_size, ))
 
         while world_state.is_mission_running:
+            time.sleep(.1)
             world_state = self.agent_host.getWorldState()
             if len(world_state.errors) > 0:
                 raise AssertionError('Could not load grid.')
@@ -268,26 +267,31 @@ class DiamondCollector(gym.Env):
                 # First we get the json from the observation API
                 msg = world_state.observations[-1].text
                 observations = json.loads(msg)
+                
+                # Record any new damage that is taken for negative reward later
+                damage_taken = observations['DamageTaken']
+                self.new_damage_taken = damage_taken - self.damage_taken_so_far
+                self.damage_taken_so_far = damage_taken
 
                 # Get observation
-                agent_location = None 
+                agent_location = None
                 for entity in observations['Zombie']:
                     if entity['name'] == 'CS175DiamondCollector':
-                        agent_location = (entity['x']-2, entity['z']+2)
+                        agent_location = (entity['x']+2, entity['z']+2)
                         break                   
-                zombie_locations = list((entity['x']-agent_location[0], abs(entity['z']-agent_location[1])) for entity in observations['Zombie'] if entity['name'] == 'Zombie')                              
-                for i in range(len(obs)):
+                zombie_locations = list((agent_location[0]-entity['x'], agent_location[1]-entity['z']) for entity in observations['Zombie'] if entity['name'] == 'Zombie')                              
+                for i in range(self.obs_size * self.obs_size):
                     obs[i] = False  
-                for loc in zombie_locations:
-                    x,y = math.floor(loc[0]),math.floor(loc[1])
-                    obs[x + y * self.obs_size] = True
-                
+                    
+                for x,z in zombie_locations:
+                    obs[math.floor(x) + math.floor(z) * self.obs_size] = True 
+                    
 #                 grid = observations['floorAll']
 #                 for i, x in enumerate(grid):
 #                     obs[i] = x == 'diamond_ore' or x == 'lava'
 
                 # Rotate observation with orientation of agent
-                obs = obs.reshape((2, self.obs_size, self.obs_size))
+                obs = obs.reshape((1, self.obs_size, self.obs_size))
                 yaw = observations['Yaw']
                 if yaw >= 225 and yaw < 315:
                     obs = np.rot90(obs, k=1, axes=(1, 2))
@@ -296,10 +300,9 @@ class DiamondCollector(gym.Env):
                 elif yaw >= 45 and yaw < 135:
                     obs = np.rot90(obs, k=3, axes=(1, 2))
                 obs = obs.flatten()
-                
+                                
                 break
-
-        print("OBS", obs)
+        
         return obs
 
     def log_returns(self):
