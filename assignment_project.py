@@ -197,7 +197,7 @@ class DiamondCollector(gym.Env):
                             <ObservationFromNearbyEntities>
                                 <Range name="Zombie" xrange="4" yrange="1" zrange="4"/>
                             </ObservationFromNearbyEntities>
-                            <RewardForTimeTaken initialReward="10" delta="+0.05" density="PER_TICK" />
+                            <RewardForTimeTaken initialReward="10" delta="+1" density="PER_TICK" />
                             <DiscreteMovementCommands/> 
                             <ObservationFromFullStats/>
                             <ObservationFromRay/>
