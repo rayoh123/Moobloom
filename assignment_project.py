@@ -25,7 +25,7 @@ class DiamondCollector(gym.Env):
         self.size = 10
         self.reward_density = .1
         self.penalty_density = .02
-        self.obs_size = 9
+        self.obs_size = 7
         self.max_episode_steps = 100
         self.log_frequency = 10
         self.action_dict = {
@@ -52,7 +52,9 @@ class DiamondCollector(gym.Env):
             exit(1)
 
         # DiamondCollector Parameters
-        self.num_zombies = 5
+        self.is_begin = True
+        self.facing_zombie = False
+        self.num_zombies = 40
         self.damage_taken_so_far = 0
         self.new_damage_taken = 0
         self.obs = None
@@ -60,6 +62,7 @@ class DiamondCollector(gym.Env):
         self.episode_return = 0
         self.returns = []
         self.steps = []
+        self.max_episode_steps = 300
 
     def reset(self):
         """
@@ -101,12 +104,24 @@ class DiamondCollector(gym.Env):
             done: <bool> indicates terminal state
             info: <dict> dictionary of extra information
         """
+        if self.is_begin:
+            zombie_locations = set()   
+            for i in range(self.num_zombies):
+                x = random.randint(-self.size,self.size + 1)
+                z = random.randint(-self.size,self.size + 1)
+                while (x,z) in zombie_locations:
+                    x = random.randint(-self.size,self.size + 1)
+                    z = random.randint(-self.size,self.size + 1)
+                zombie_locations.add((x,z))
+            for loc in zombie_locations:
+                self.agent_host.sendCommand(f'chat /summon zombie {loc[0]} 2 {loc[1]} {{Attributes:[{{Name:"generic.movementSpeed", Base:0.0}}]}}')
+            self.is_begin = False
 
         # Get Action
-        command = self.action_dict[action]
-        self.agent_host.sendCommand(command)
-        time.sleep(.1)
-        self.episode_step += 1
+        if not self.facing_zombie or (self.facing_zombie and action != 'move 1'):
+            command = self.action_dict[action]
+            self.agent_host.sendCommand(command)
+            self.episode_step += 1
 
         # Get Observation
         world_state = self.agent_host.getWorldState()
@@ -143,19 +158,19 @@ class DiamondCollector(gym.Env):
 #                          "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, self.size+1, -self.size, -self.size)
 
 
-        zombies_xml = []
-        zombie_locations = set()
-   
-        for i in range(self.num_zombies):
-            x = random.randint(-self.size,self.size + 1)
-            z = random.randint(-self.size,self.size + 1)
-            while (x,z) in zombie_locations:
-                x = random.randint(-self.size,self.size + 1)
-                z = random.randint(-self.size,self.size + 1)
-            zombie_locations.add((x,z))
-            zombies_xml.append("<DrawEntity x='"+str(x)+"' y='2' z='"+str(z)+"' type='Zombie' />")
-         
-        zombies_xml = ''.join(zombies_xml)
+##        zombies_xml = []
+##        zombie_locations = set()
+##   
+##        for i in range(self.num_zombies):
+##            x = random.randint(-self.size,self.size + 1)
+##            z = random.randint(-self.size,self.size + 1)
+##            while (x,z) in zombie_locations:
+##                x = random.randint(-self.size,self.size + 1)
+##                z = random.randint(-self.size,self.size + 1)
+##            zombie_locations.add((x,z))
+##            zombies_xml.append("<DrawEntity x='"+str(x)+"' y='2' z='"+str(z)+"' type='Zombie' />")
+##         
+##        zombies_xml = ''.join(zombies_xml)
 
         return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -176,9 +191,8 @@ class DiamondCollector(gym.Env):
                         <ServerHandlers>
                             <FlatWorldGenerator generatorString="3;7,2;1;"/>
                             <DrawingDecorator>''' + \
-                                "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='air'/>".format(-self.size, self.size, -self.size, self.size) + \
+                                "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='air'/>".format(-900, 900, -900, 900) + \
                                 "<DrawCuboid x1='{}' x2='{}' y1='1' y2='1' z1='{}' z2='{}' type='stone'/>".format(-self.size, self.size, -self.size, self.size) + \
-                                zombies_xml + \
                                 '''<DrawBlock x='0'  y='2' z='0' type='air' />
                             </DrawingDecorator>
                             <ServerQuitWhenAnyAgentFinishes/>
@@ -195,10 +209,11 @@ class DiamondCollector(gym.Env):
                         </AgentStart>
                         <AgentHandlers>
                             <ObservationFromNearbyEntities>
-                                <Range name="Zombie" xrange="4" yrange="1" zrange="4"/>
+                                <Range name="Zombie" xrange="3" yrange="1" zrange="3"/>
                             </ObservationFromNearbyEntities>
-                            <RewardForTimeTaken initialReward="10" delta="+1" density="PER_TICK" />
-                            <DiscreteMovementCommands/> 
+                            <RewardForTimeTaken initialReward="1" delta="+2" density="PER_TICK" />
+                            <DiscreteMovementCommands/>
+                            <ChatCommands/>
                             <ObservationFromFullStats/>
                             <ObservationFromRay/>
                             <ObservationFromGrid>
@@ -207,6 +222,7 @@ class DiamondCollector(gym.Env):
                                     <max x="'''+str(int(self.obs_size/2))+'''" y="0" z="'''+str(int(self.obs_size/2))+'''"/>
                                 </Grid>
                             </ObservationFromGrid>
+                            <AgentQuitFromReachingCommandQuota total="'''+str(self.max_episode_steps)+'''" />
                         </AgentHandlers>
                     </AgentSection>
                 </Mission>'''
@@ -215,6 +231,7 @@ class DiamondCollector(gym.Env):
         """
         Initialize new malmo mission.
         """
+        self.is_begin = True
         my_mission = MalmoPython.MissionSpec(self.get_mission_xml(), True)
         my_mission_record = MalmoPython.MissionRecordSpec()
         my_mission.requestVideo(800, 500)
@@ -234,7 +251,7 @@ class DiamondCollector(gym.Env):
                     exit(1)
                 else:
                     time.sleep(2)
-
+                    
         world_state = self.agent_host.getWorldState()
         while not world_state.has_mission_begun:
             time.sleep(0.1)
@@ -255,10 +272,11 @@ class DiamondCollector(gym.Env):
         Returns
             observation: <np.array> the state observation
         """
+        
         obs = np.zeros((self.obs_size * self.obs_size, ))
-
+        
         while world_state.is_mission_running:
-            time.sleep(.1)
+            time.sleep(0.1)
             world_state = self.agent_host.getWorldState()
             if len(world_state.errors) > 0:
                 raise AssertionError('Could not load grid.')
@@ -300,7 +318,10 @@ class DiamondCollector(gym.Env):
                 elif yaw >= 45 and yaw < 135:
                     obs = np.rot90(obs, k=3, axes=(1, 2))
                 obs = obs.flatten()
-                                
+
+                # Check if there is a zombie in front of agent
+                self.facing_zombie = observations['LineOfSight']['type'] == 'Zombie'
+                
                 break
         
         return obs
