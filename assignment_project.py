@@ -54,7 +54,7 @@ class Moobloom(gym.Env):
         # Moobloom Parameters
         self.is_begin = True
         self.facing_zombie = False
-        self.num_zombies = 5
+        self.num_zombies = 1
         self.damage_taken_so_far = 0
         self.new_damage_taken = 0
         self.obs = None
@@ -195,11 +195,11 @@ class Moobloom(gym.Env):
                                 <InventoryItem slot="0" type="diamond_pickaxe"/>
                             </Inventory>
                         </AgentStart>
-                        <AgentHandlers>
-                            <ObservationFromNearbyEntities>
-                                <Range name="Zombie" xrange="3" yrange="1" zrange="3"/>
+                        <AgentHandlers>''' + \
+                            f'''<ObservationFromNearbyEntities>
+                                <Range name="Zombie" xrange="{self.obs_size//2}" yrange="1" zrange="{self.obs_size//2}"/>
                             </ObservationFromNearbyEntities>
-                            <RewardForTimeTaken initialReward="1" delta="+2" density="PER_TICK" />
+                            <RewardForTimeTaken initialReward="10" delta="+2" density="PER_TICK" />
                             <DiscreteMovementCommands/>
                             <ChatCommands/>
                             <ObservationFromFullStats/>
@@ -264,7 +264,7 @@ class Moobloom(gym.Env):
         obs = np.zeros((self.obs_size * self.obs_size, ))
         
         while world_state.is_mission_running:
-            time.sleep(0.3)
+            time.sleep(0.1)
             world_state = self.agent_host.getWorldState()
             if len(world_state.errors) > 0:
                 raise AssertionError('Could not load grid.')
@@ -278,12 +278,13 @@ class Moobloom(gym.Env):
                 damage_taken = observations['DamageTaken']
                 self.new_damage_taken = damage_taken - self.damage_taken_so_far
                 self.damage_taken_so_far = damage_taken
+                print(self.new_damage_taken)
 
                 # Get observation
                 agent_location = None
                 for entity in observations['Zombie']:
                     if entity['name'] == 'CS175Moobloom':
-                        agent_location = (entity['x']+2, entity['z']+2)
+                        agent_location = (entity['x']+self.obs_size//2, entity['z']+self.obs_size//2)
                         break                   
                 zombie_locations = list((agent_location[0]-entity['x'], agent_location[1]-entity['z']) for entity in observations['Zombie'] if entity['name'] == 'Zombie')                              
                 for i in range(self.obs_size * self.obs_size):
@@ -306,7 +307,7 @@ class Moobloom(gym.Env):
                 elif yaw >= 45 and yaw < 135:
                     obs = np.rot90(obs, k=3, axes=(1, 2))
                 obs = obs.flatten()
-
+                print(obs)
                 # Check if there is a zombie in front of agent
                 self.facing_zombie = observations['LineOfSight']['type'] == 'Zombie'
                 
