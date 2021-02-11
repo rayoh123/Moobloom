@@ -18,7 +18,7 @@ from gym.spaces import Discrete, Box
 from ray.rllib.agents import ppo
 
 
-class DiamondCollector(gym.Env):
+class Moobloom(gym.Env):
 
     def __init__(self, env_config):  
         # Static Parameters
@@ -51,10 +51,10 @@ class DiamondCollector(gym.Env):
             print(self.agent_host.getUsage())
             exit(1)
 
-        # DiamondCollector Parameters
+        # Moobloom Parameters
         self.is_begin = True
         self.facing_zombie = False
-        self.num_zombies = 40
+        self.num_zombies = 5
         self.damage_taken_so_far = 0
         self.new_damage_taken = 0
         self.obs = None
@@ -104,19 +104,6 @@ class DiamondCollector(gym.Env):
             done: <bool> indicates terminal state
             info: <dict> dictionary of extra information
         """
-        if self.is_begin:
-            zombie_locations = set()   
-            for i in range(self.num_zombies):
-                x = random.randint(-self.size,self.size + 1)
-                z = random.randint(-self.size,self.size + 1)
-                while (x,z) in zombie_locations:
-                    x = random.randint(-self.size,self.size + 1)
-                    z = random.randint(-self.size,self.size + 1)
-                zombie_locations.add((x,z))
-            for loc in zombie_locations:
-                self.agent_host.sendCommand(f'chat /summon zombie {loc[0]} 2 {loc[1]} {{Attributes:[{{Name:"generic.movementSpeed", Base:0.0}}]}}')
-            self.is_begin = False
-
         # Get Action
         if not self.facing_zombie or (self.facing_zombie and action != 'move 1'):
             command = self.action_dict[action]
@@ -158,19 +145,19 @@ class DiamondCollector(gym.Env):
 #                          "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, self.size+1, -self.size, -self.size)
 
 
-##        zombies_xml = []
-##        zombie_locations = set()
-##   
-##        for i in range(self.num_zombies):
-##            x = random.randint(-self.size,self.size + 1)
-##            z = random.randint(-self.size,self.size + 1)
-##            while (x,z) in zombie_locations:
-##                x = random.randint(-self.size,self.size + 1)
-##                z = random.randint(-self.size,self.size + 1)
-##            zombie_locations.add((x,z))
-##            zombies_xml.append("<DrawEntity x='"+str(x)+"' y='2' z='"+str(z)+"' type='Zombie' />")
-##         
-##        zombies_xml = ''.join(zombies_xml)
+        zombies_xml = []
+        zombie_locations = set()
+   
+        for i in range(self.num_zombies):
+            x = random.randint(-self.size,self.size + 1)
+            z = random.randint(-self.size,self.size + 1)
+            while (x,z) in zombie_locations:
+                x = random.randint(-self.size,self.size + 1)
+                z = random.randint(-self.size,self.size + 1)
+            zombie_locations.add((x,z))
+            zombies_xml.append("<DrawEntity x='"+str(x)+"' y='2' z='"+str(z)+"' type='Zombie' />")
+         
+        zombies_xml = ''.join(zombies_xml)
 
         return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -193,6 +180,7 @@ class DiamondCollector(gym.Env):
                             <DrawingDecorator>''' + \
                                 "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='air'/>".format(-900, 900, -900, 900) + \
                                 "<DrawCuboid x1='{}' x2='{}' y1='1' y2='1' z1='{}' z2='{}' type='stone'/>".format(-self.size, self.size, -self.size, self.size) + \
+                                zombies_xml + \
                                 '''<DrawBlock x='0'  y='2' z='0' type='air' />
                             </DrawingDecorator>
                             <ServerQuitWhenAnyAgentFinishes/>
@@ -200,7 +188,7 @@ class DiamondCollector(gym.Env):
                     </ServerSection>
 
                     <AgentSection mode="Survival">
-                        <Name>CS175DiamondCollector</Name>
+                        <Name>CS175Moobloom</Name>
                         <AgentStart>
                             <Placement x="0.5" y="2" z="0.5" pitch="45" yaw="0"/>
                             <Inventory>
@@ -243,7 +231,7 @@ class DiamondCollector(gym.Env):
 
         for retry in range(max_retries):
             try:
-                self.agent_host.startMission( my_mission, my_clients, my_mission_record, 0, 'DiamondCollector' )
+                self.agent_host.startMission( my_mission, my_clients, my_mission_record, 0, 'Moobloom' )
                 break
             except RuntimeError as e:
                 if retry == max_retries - 1:
@@ -276,7 +264,7 @@ class DiamondCollector(gym.Env):
         obs = np.zeros((self.obs_size * self.obs_size, ))
         
         while world_state.is_mission_running:
-            time.sleep(0.1)
+            time.sleep(0.3)
             world_state = self.agent_host.getWorldState()
             if len(world_state.errors) > 0:
                 raise AssertionError('Could not load grid.')
@@ -294,7 +282,7 @@ class DiamondCollector(gym.Env):
                 # Get observation
                 agent_location = None
                 for entity in observations['Zombie']:
-                    if entity['name'] == 'CS175DiamondCollector':
+                    if entity['name'] == 'CS175Moobloom':
                         agent_location = (entity['x']+2, entity['z']+2)
                         break                   
                 zombie_locations = list((agent_location[0]-entity['x'], agent_location[1]-entity['z']) for entity in observations['Zombie'] if entity['name'] == 'Zombie')                              
@@ -302,8 +290,8 @@ class DiamondCollector(gym.Env):
                     obs[i] = False  
                     
                 for x,z in zombie_locations:
-                    obs[math.floor(x) + math.floor(z) * self.obs_size] = True 
-                    
+                    obs[math.floor(z) + math.floor(x) * self.obs_size] = True 
+
 #                 grid = observations['floorAll']
 #                 for i, x in enumerate(grid):
 #                     obs[i] = x == 'diamond_ore' or x == 'lava'
@@ -350,7 +338,7 @@ class DiamondCollector(gym.Env):
 
 if __name__ == '__main__':
     ray.init()
-    trainer = ppo.PPOTrainer(env=DiamondCollector, config={
+    trainer = ppo.PPOTrainer(env=Moobloom, config={
         'env_config': {},           # No environment parameters to configure
         'framework': 'torch',       # Use pyotrch instead of tensorflow
         'num_gpus': 0,              # We aren't using GPUs
