@@ -169,7 +169,7 @@ class Moobloom(gym.Env):
                     <ServerSection>
                         <ServerInitialConditions>
                             <Time>
-                                <StartTime>18000</StartTime>
+                                <StartTime>6000</StartTime>
                                 <AllowPassageOfTime>false</AllowPassageOfTime>
                             </Time>
                             <Weather>clear</Weather>
