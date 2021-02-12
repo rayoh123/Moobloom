@@ -3,38 +3,26 @@ layout: default
 title:  Home
 ---
 
-Source code: https://github.com/rayoh123/Moobloom
+![](ezgif.com-gif-maker.gif)
 
-Reports:
+**[SORCE CODE](https://github.com/rayoh123/Moobloom)**
+
+**REPORTS:**
 
 - [Proposal](proposal.html)
 - [Status](status.html)
 - [Final](final.html)
 
-What's Markdown (`.md`)?
+Our team meets at least once every week, at 3:30 PM each Friday
 
-Markdown is markup that lets you write hypertext (HTML) documents
-in easy-to-read and easy-to-write plain text.
-No angle brackets `<></>` required for
-paragraphs, lists, blockquotes, tables, etc.
+The goal of our project is to train our agent to be adept at evading hostile mobs such as zombies, 
+skeletons, and creepers while learning that passive mobs like cows, sheep, and pigs are safe.
 
 
-This is a paragraph (in Markdown). Some more
-text here.
-
-This is another paragraph.
-
-This is a list:
-
-- Orange
-- Apple
-- Blueberry
-
-$$x^2 = y^2$$
-
-
-Just getting started with Markdown?
-See the [HTML <-> Markdown Quick Reference (Cheat Sheet)][quickref].
-
+Relevant Resources:
+- [OpenAI Hide and Seek](https://www.youtube.com/watch?v=Lu56xVlZ40M). Our project will be similar to this interesting 
+AI project, except less ambitious in scope. 
+- [Fighting Zombies in Minecraft with RL Research Paper](http://cs229.stanford.edu/proj2016/report/UdagawaLeeNarasimhan-FightingZombiesInMinecraftWithDeepReinforcementLearning-report.pdf). 
+This is an interesting explanation of how to do something slightly similar to what we are attempting.
 
 [quickref]: https://github.com/mundimark/quickrefs/blob/master/HTML.md

@@ -189,9 +189,6 @@ class Moobloom(gym.Env):
                         <Name>CS175Moobloom</Name>
                         <AgentStart>
                             <Placement x="0.5" y="2" z="0.5" pitch="45" yaw="0"/>
-                            <Inventory>
-                                <InventoryItem slot="0" type="diamond_pickaxe"/>
-                            </Inventory>
                         </AgentStart>
                         <AgentHandlers>''' + \
                             f'''<ObservationFromNearbyEntities>
