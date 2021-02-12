@@ -22,7 +22,7 @@ class Moobloom(gym.Env):
 
     def __init__(self, env_config):  
         # Static Parameters
-        self.size = 10
+        self.size = 5
         self.reward_density = .1
         self.penalty_density = .02
         self.obs_size = 7
@@ -38,7 +38,6 @@ class Moobloom(gym.Env):
                                              
         }
         # Rllib Parameters
-
         self.action_space =  Discrete(len(self.action_dict)) 
         self.observation_space = Box(0, 1, shape=(self.obs_size * self.obs_size, ), dtype=np.float32)
 
@@ -52,7 +51,6 @@ class Moobloom(gym.Env):
             exit(1)
 
         # Moobloom Parameters
-        self.is_begin = True
         self.facing_zombie = False
         self.num_zombies = 1
         self.damage_taken_so_far = 0
@@ -62,7 +60,7 @@ class Moobloom(gym.Env):
         self.episode_return = 0
         self.returns = []
         self.steps = []
-        self.max_episode_steps = 300
+        self.max_episode_steps = 100
 
     def reset(self):
         """
@@ -199,17 +197,11 @@ class Moobloom(gym.Env):
                             f'''<ObservationFromNearbyEntities>
                                 <Range name="Zombie" xrange="{self.obs_size//2}" yrange="1" zrange="{self.obs_size//2}"/>
                             </ObservationFromNearbyEntities>
+                            <ObservationFromFullStats/>
+                            <ObservationFromRay/>
                             <RewardForTimeTaken initialReward="10" delta="+2" density="PER_TICK" />
                             <DiscreteMovementCommands/>
                             <ChatCommands/>
-                            <ObservationFromFullStats/>
-                            <ObservationFromRay/>
-                            <ObservationFromGrid>
-                                <Grid name="floorAll">
-                                    <min x="-'''+str(int(self.obs_size/2))+'''" y="-1" z="-'''+str(int(self.obs_size/2))+'''"/>
-                                    <max x="'''+str(int(self.obs_size/2))+'''" y="0" z="'''+str(int(self.obs_size/2))+'''"/>
-                                </Grid>
-                            </ObservationFromGrid>
                             <AgentQuitFromReachingCommandQuota total="'''+str(self.max_episode_steps)+'''" />
                         </AgentHandlers>
                     </AgentSection>
@@ -273,12 +265,20 @@ class Moobloom(gym.Env):
                 # First we get the json from the observation API
                 msg = world_state.observations[-1].text
                 observations = json.loads(msg)
+                while 'DamageTaken' not in observations \
+                      or 'Zombie' not in observations \
+                      or 'Yaw' not in observations \
+                      or 'LineOfSight' not in observations:
+                    time.sleep(0.1)
+                    msg = world_state.observations[-1].text
+                    observations = json.loads(msg)
+                    print(observations)
+                    print(2)
                 
                 # Record any new damage that is taken for negative reward later
                 damage_taken = observations['DamageTaken']
                 self.new_damage_taken = damage_taken - self.damage_taken_so_far
                 self.damage_taken_so_far = damage_taken
-                print(self.new_damage_taken)
 
                 # Get observation
                 agent_location = None
@@ -307,7 +307,7 @@ class Moobloom(gym.Env):
                 elif yaw >= 45 and yaw < 135:
                     obs = np.rot90(obs, k=3, axes=(1, 2))
                 obs = obs.flatten()
-                print(obs)
+
                 # Check if there is a zombie in front of agent
                 self.facing_zombie = observations['LineOfSight']['type'] == 'Zombie'
                 
@@ -327,7 +327,7 @@ class Moobloom(gym.Env):
         returns_smooth = np.convolve(self.returns[1:], box, mode='same')
         plt.clf()
         plt.plot(self.steps[1:], returns_smooth)
-        plt.title('Diamond Collector')
+        plt.title('Moobloom')
         plt.ylabel('Return')
         plt.xlabel('Steps')
         plt.savefig('returns.png')
@@ -346,5 +346,11 @@ if __name__ == '__main__':
         'num_workers': 0            # We aren't using parallelism
     })
 
+    trainer.load_checkpoint("C:\\Users\\Owner\\Desktop\\Malmo\\Python_Examples\\checkpoint-36")
+    i = 0
     while True:
         print(trainer.train())
+        i += 1
+        if i % 2 == 0:
+            checkpoint = trainer.save_checkpoint("C:\\Users\\Owner\\Desktop\\Malmo\\Python_Examples")
+            print("checkpoint saved")
