@@ -3,9 +3,11 @@ layout: default
 title:  Home
 ---
 
-[Source code](https://github.com/rayoh123/Moobloom)
+![](ezgif.com-gif-maker.gif)
 
-Reports:
+**[SORCE CODE](https://github.com/rayoh123/Moobloom)**
+
+**REPORTS:**
 
 - [Proposal](proposal.html)
 - [Status](status.html)
@@ -16,7 +18,6 @@ Our team meets at least once every week, at 3:30 PM each Friday
 The goal of our project is to train our agent to be adept at evading hostile mobs such as zombies, 
 skeletons, and creepers while learning that passive mobs like cows, sheep, and pigs are safe.
 
-![](ezgif.com-gif-maker.gif)
 
 Relevant Resources:
 - [OpenAI Hide and Seek](https://www.youtube.com/watch?v=Lu56xVlZ40M). Our project will be similar to this interesting 
