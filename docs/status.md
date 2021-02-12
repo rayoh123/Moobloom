@@ -16,7 +16,8 @@ The update equation that we use in our project is: WRITE UPDATE EQUATION HERE.
 
 In our setup, we place the agent in the center of a flat, open field and randomly spawn hostile mobs like zombies on the field. The agent observes a 7 by 7
 grid centered on it, and can see any entities in this grid. The agent can respond with one of three actions: turning left in place, 
-turning right in place, or moving forward. 
+turning right in place, or moving forward.  
+
 ![An example setup for the sanity check case](SETUP.png)
 
 Since we are training the agent to escape from hostile mobs, the goal is to stay alive for as long as possible. As such, the agent receives a positive reward for every 
@@ -26,12 +27,14 @@ whenever it takes damage from a hostile mob. Therefore, the reward function that
 ## Evaluation:
 We can evaluate our agent's performance quantitatively by comparing the agent's average reward near the beginning of its 
 training to its average reward near the end of its training. If there is a noticable and significant increase in average 
-reward, that is good. If there is no increase in average reward, that is bad. Here is a chart of the agent's average reward over time: 
+reward, that is good. If there is no increase in average reward, that is bad. Here is a chart of the agent's average reward over time:  
+
 ![The reward graph for sanity check agent](RETURNS.png)
 
 We can evaluate our agent's performance qualitatively by seeing if the agent takes a reasonable course of action when it is near a hostile mob. Namely, 
 when the agent encounters a hostile mob, it should immediately turn and move in the opposite direction. If the agent moves perpendicular to the mob's 
-path towards the agent, that is bad. Our agent BLAH BLAH.
+path towards the agent, that is bad. Our agent BLAH BLAH.  
+
 ![](BAD_BEHAVIOR.png) ![](GOOD_BEHAVIOR.png)
 
 ## Remaining Goals and Challenges:
