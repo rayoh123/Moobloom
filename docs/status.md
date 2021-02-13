@@ -3,7 +3,7 @@ layout: default
 title: Status
 ---
 ## Video:
-https://www.youtube.com/embed/Qjy7cKwEcpY
+https://www.youtube.com/watch?v=Qjy7cKwEcpY&feature=youtu.be&ab_channel=BenjaminRoth
 
 ## Project Summary: 
 The goal of our project is to train our agent to be adept at evading hostile mobs such as zombies, 
