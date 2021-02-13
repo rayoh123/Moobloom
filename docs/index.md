@@ -3,7 +3,7 @@ layout: default
 title:  Home
 ---
 
-![](THEWALKINGDEAD.gif)
+![](Resources/THEWALKINGDEAD.gif)
 
 **[SORCE CODE](https://github.com/rayoh123/TheWalkingDead)**
 
@@ -20,8 +20,8 @@ skeletons, and creepers while learning that passive mobs like cows, sheep, and p
 
 
 Relevant Resources:
-- [OpenAI Hide and Seek](https://www.youtube.com/watch?v=Lu56xVlZ40M). Our project will be similar to this interesting 
-AI project, except less ambitious in scope. 
+- [OpenAI PPO Algorithm](https://openai.com/blog/openai-baselines-ppo/) OpenAI's introduction to its PPO algorithm.
+- [OpenAI Hide and Seek](https://www.youtube.com/watch?v=Lu56xVlZ40M). Our project is inspired by this interesting AI project.
 - [Fighting Zombies in Minecraft with RL Research Paper](http://cs229.stanford.edu/proj2016/report/UdagawaLeeNarasimhan-FightingZombiesInMinecraftWithDeepReinforcementLearning-report.pdf). 
 This is an interesting explanation of how to do something slightly similar to what we are attempting.
 

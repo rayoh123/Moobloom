@@ -13,4 +13,4 @@ title:  Team
 3. ***Benjamin Jacob Roth***: benroth8
 
 
-![](THEWALKINGDEAD.gif)
+![](Resources/THEWALKINGDEAD.gif)

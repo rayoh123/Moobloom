@@ -10,32 +10,47 @@ in their first few in-game nights. It will be interesting to see if an AI traine
 be able to mimick the same escape strategies employed by human players.
 
 ## Approach: 
-We are training the AI to escape from hostile mobs using reinforcement learning. Our hope is that 
-the agent will eventually learn to maximixe the distance between itself and any hostile mobs. 
-The update equation that we use in our project is: WRITE UPDATE EQUATION HERE. 
+We are training the AI to escape from hostile mobs using reinforcement learning. Our hope is that
+the agent will eventually learn to maximixe the distance between itself and any hostile mobs. To train our agent, we are using the
+model-free Proximal Policy Optimization (PPO) algorithm. The PPO algorithm's update equation is:  
+WRITE UPDATE EQUATION HERE. 
 
-In our setup, we place the agent in the center of a flat, open field and randomly spawn hostile mobs like zombies on the field. The agent observes a 7 by 7
-grid centered on it, and can see any entities in this grid. The agent can respond with one of three actions: turning left in place, 
-turning right in place, or moving forward.  
+In our setup, we place the agent in the center of a flat, open 11 by 11 block field and randomly spawn a single hostile mob 
+(a zombie) on the field. The agent observes a 7 by 7 grid centered on itself, and can see any entities within this grid. 
+The agent can respond with one of three actions: turning left in place, turning right in place, or moving forward. However, if the agent 
+gets within the 1-block strike distance of the zombie, it will get attacked and take damage. The mission ends if the 
+agent has taken 100 episode steps or if the agent dies from losing all of its health.  
 
-![An example setup for the sanity check case](SETUP.png)
+#### An example setup for the sanity check case  
+![An example setup for the sanity check case](Resources/SETUP.png)  
 
-Since we are training the agent to escape from hostile mobs, the goal is to stay alive for as long as possible. As such, the agent receives a positive reward for every 
-gametick that it remains alive. Additionally, since taking damage is detrimental to the goal of escaping from mobs, the agent receives a negative reward
-whenever it takes damage from a hostile mob. Therefore, the reward function that we use is: WRITE REWARD FUNCTION HERE.
+Since we are training the agent to escape from hostile mobs, the goal is to stay alive for as long as possible. As such, we have 
+given the agent the following rewards:  
+- +2 for every gametick that the agent stays alive
+- -n for every n healthpoints of damage that the agent takes from the zombie
 
-## Evaluation:
+
+## Evaluation:  
+### Quantitative:  
 We can evaluate our agent's performance quantitatively by comparing the agent's average reward near the beginning of its 
 training to its average reward near the end of its training. If there is a noticable and significant increase in average 
 reward, that is good. If there is no increase in average reward, that is bad. Here is a chart of the agent's average reward over time:  
 
-![The reward graph for sanity check agent](RETURNS.png)
+#### The reward graph for sanity check agent  
+![The reward graph for sanity check agent](Resources/RETURNS.png)  
 
-We can evaluate our agent's performance qualitatively by seeing if the agent takes a reasonable course of action when it is near a hostile mob. Namely, 
-when the agent encounters a hostile mob, it should immediately turn and move in the opposite direction. If the agent moves perpendicular to the mob's 
-path towards the agent, that is bad. Our agent BLAH BLAH.  
+At the beginning of training, the agent's average reward is around -150 points. However, after 140,000 episode steps, its average reward has improved 
+to 0 points. The clear positive trend in the graph indicates that the agent is improving over time.  
 
-![](BAD_BEHAVIOR.png) ![](GOOD_BEHAVIOR.png)
+### Qualitative:  
+We can evaluate our agent's performance qualitatively by seeing if the agent takes a reasonable course of action when it is near the zombie. Namely, 
+when the agent encounters a hostile mob, it should immediately turn and move away. If the agent moves towards the zombie, that is bad.  
+
+![](BAD_BEHAVIOR.png) ![] | (Resources/GOOD_BEHAVIOR.png)  
+
+At the beginning of training, our agent runs directly into the zombie in every mission. From a human point of view, this is an unresonable
+thing to do, as no competent player would walk directly towards a zombie. INSERT 10 SECOND GIF. However, at the end of training, the now-improved agent 
+has realized that the wisest thing to do when encountering a zombie is to run far away in a straight line. INSERT 10 SECOND GIF  
 
 ## Remaining Goals and Challenges:
 Our current prototype is limited because it performs the humanly easy task of escaping from a single zombie. In a regular game of Minecraft, 
@@ -58,7 +73,7 @@ Another difficulty is figuring out how to change the training so that the agent 
 We would need to figure out what new rewards we can add to ensure that the agent realizes that it has to stay a far distance away from skeletons. 
 
 ## Resources Used:
-- [OpenAI Hide and Seek](https://www.youtube.com/watch?v=Lu56xVlZ40M). Our project will be similar to this interesting 
-AI project, except less ambitious in scope. 
-- [Fighting Zombies in Minecraft with RL Research Paper](http://cs229.stanford.edu/proj2016/report/UdagawaLeeNarasimhan-FightingZombiesInMinecraftWithDeepReinforcementLearning-report.pdf). 
+- [OpenAI PPO Algorithm](https://openai.com/blog/openai-baselines-ppo/) OpenAI's introduction to its PPO algorithm.
+- [OpenAI Hide and Seek](https://www.youtube.com/watch?v=Lu56xVlZ40M) Our project is inspired by this interesting AI project.
+- [Fighting Zombies in Minecraft with RL Research Paper](http://cs229.stanford.edu/proj2016/report/UdagawaLeeNarasimhan-FightingZombiesInMinecraftWithDeepReinforcementLearning-report.pdf) 
 This is an interesting explanation of how to do something slightly similar to what we are attempting.
