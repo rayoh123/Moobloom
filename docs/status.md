@@ -72,6 +72,8 @@ Another difficulty is figuring out how to change the training so that the agent 
 (about 15 blocks), so it would prove a challenge for the agent to realize that it should stay much, much further away from skeletons than zombies and creepers. 
 We would need to figure out what new rewards we can add to ensure that the agent realizes that it has to stay a far distance away from skeletons. 
 
+## Video:
+
 ## Resources Used:
 - [OpenAI PPO Algorithm](https://openai.com/blog/openai-baselines-ppo/) OpenAI's introduction to its PPO algorithm.
 - [OpenAI Hide and Seek](https://www.youtube.com/watch?v=Lu56xVlZ40M) Our project is inspired by this interesting AI project.
