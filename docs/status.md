@@ -2,6 +2,8 @@
 layout: default
 title: Status
 ---
+## Video:
+
 ## Project Summary: 
 The goal of our project is to train our agent to be adept at evading hostile mobs such as zombies, 
 skeletons, and creepers while learning that passive mobs like cows, sheep, and pigs are safe. This is an
@@ -71,8 +73,6 @@ skeletons and creepers, and see how long it takes to train. If it takes too long
 Another difficulty is figuring out how to change the training so that the agent can accomodate skeletons. Unlike zombies, skeletons can attack at a far range
 (about 15 blocks), so it would prove a challenge for the agent to realize that it should stay much, much further away from skeletons than zombies and creepers. 
 We would need to figure out what new rewards we can add to ensure that the agent realizes that it has to stay a far distance away from skeletons. 
-
-## Video:
 
 ## Resources Used:
 - [OpenAI PPO Algorithm](https://openai.com/blog/openai-baselines-ppo/) OpenAI's introduction to its PPO algorithm.
