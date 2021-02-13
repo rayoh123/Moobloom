@@ -16,7 +16,8 @@ be able to mimick the same escape strategies employed by human players.
 We are training the AI to escape from hostile mobs using reinforcement learning. Our hope is that
 the agent will eventually learn to maximixe the distance between itself and any hostile mobs. To train our agent, we are using the
 model-free Proximal Policy Optimization (PPO) algorithm. The PPO algorithm's update equation is:  
-WRITE UPDATE EQUATION HERE. 
+
+![](Resources/UPDATE_EQUATION.png)
 
 In our setup, we place the agent in the center of a flat, open 11 by 11 block field and randomly spawn a single hostile mob 
 (a zombie) on the field. The agent observes a 7 by 7 grid centered on itself, and can see any entities within this grid. 
@@ -52,8 +53,13 @@ when the agent encounters a hostile mob, it should immediately turn and move awa
 ![](Resources/BAD_BEHAVIOR.png) | ![](Resources/GOOD_BEHAVIOR.png)   
 
 At the beginning of training, our agent runs directly into the zombie in every mission. From a human point of view, this is an unresonable
-thing to do, as no competent player would walk directly towards a zombie. INSERT 10 SECOND GIF. However, at the end of training, the now-improved agent 
-has realized that the wisest thing to do when encountering a zombie is to run far away in a straight line. INSERT 10 SECOND GIF  
+thing to do, as no competent player would walk directly towards a zombie.  
+
+<iframe src="https://giphy.com/embed/ZhKwKLAwZOvDfapH3I" width="480" height="270" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/ZhKwKLAwZOvDfapH3I">via GIPHY</a></p>  
+
+However, at the end of training, the now-improved agent has realized that the wisest thing to do when encountering a zombie is to run far away in a straight line.  
+
+<iframe src="https://giphy.com/embed/Whod3huunyABrj9vQo" width="480" height="270" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/Whod3huunyABrj9vQo">via GIPHY</a></p>  
 
 ## Remaining Goals and Challenges:
 Our current prototype is limited because it performs the humanly easy task of escaping from a single zombie. In a regular game of Minecraft, 
