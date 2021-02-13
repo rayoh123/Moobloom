@@ -46,9 +46,7 @@ to 0 points. The clear positive trend in the graph indicates that the agent is i
 We can evaluate our agent's performance qualitatively by seeing if the agent takes a reasonable course of action when it is near the zombie. Namely, 
 when the agent encounters a hostile mob, it should immediately turn and move away. If the agent moves towards the zombie, that is bad.  
 
-A | B
-- | - 
-![](BAD_BEHAVIOR.png) | ![](Resources/GOOD_BEHAVIOR.png)   
+![](Resources/BAD_BEHAVIOR.png) | ![](Resources/GOOD_BEHAVIOR.png)   
 
 At the beginning of training, our agent runs directly into the zombie in every mission. From a human point of view, this is an unresonable
 thing to do, as no competent player would walk directly towards a zombie. INSERT 10 SECOND GIF. However, at the end of training, the now-improved agent 
