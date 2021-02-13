@@ -3,8 +3,6 @@ layout: default
 title:  Home
 ---
 
-![](Resources/The-Walking-Dead.png)  
-
 ![](Resources/THEWALKINGDEAD.gif)  
 
 **[SORCE CODE](https://github.com/rayoh123/TheWalkingDead)**
