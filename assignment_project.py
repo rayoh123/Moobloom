@@ -7,6 +7,7 @@ except:
 
 import sys
 import time
+from pathlib import Path
 import json
 import math
 import matplotlib.pyplot as plt
@@ -18,7 +19,7 @@ from gym.spaces import Discrete, Box
 from ray.rllib.agents import ppo
 
 
-class Moobloom(gym.Env):
+class TheWalkingDead(gym.Env):
 
     def __init__(self, env_config):  
         # Static Parameters
@@ -50,9 +51,11 @@ class Moobloom(gym.Env):
             print(self.agent_host.getUsage())
             exit(1)
 
-        # Moobloom Parameters
+        # TheWalkingDead Parameters
         self.facing_zombie = False
-        self.num_zombies = 1
+        self.facing_wall = False
+        self.num_zombies = 3
+        self.num_creepers = 3
         self.damage_taken_so_far = 0
         self.new_damage_taken = 0
         self.obs = None
@@ -128,24 +131,20 @@ class Moobloom(gym.Env):
         return self.obs, reward, done, dict()
 
     def get_mission_xml(self):
-#         # Draw walls around the arena
-#         # Draw west wall
-#         west_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, -self.size-1, self.size, -self.size) + \
-#                         "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, -self.size-1, self.size, -self.size)
-#                         
-#         east_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='stone'/>".format(self.size+1, self.size+1, self.size, -self.size) + \
-#                         "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='stone'/>".format(self.size+1, self.size+1, self.size, -self.size)
-# 
-#         north_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, self.size+1, self.size, self.size) + \
-#                          "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, self.size+1, self.size, self.size)
-#                          
-#         south_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, self.size+1, -self.size, -self.size) + \
-#                          "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, self.size+1, -self.size, -self.size)
-
+        # Draw walls around the arena
+        # Draw west wall
+        west_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='obsidian'/>".format(-self.size-2, -self.size-2, self.size+2, -self.size-2) + \
+                        "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='obsidian'/>".format(-self.size-1, -self.size-1, self.size+2, -self.size-2)                       
+        east_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='obsidian'/>".format(self.size+2, self.size+2, self.size+2, -self.size-2) + \
+                        "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='obsidian'/>".format(self.size+2, self.size+2, self.size+2, -self.size-2)
+        north_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='obsidian'/>".format(-self.size-2, self.size+2, self.size+2, self.size+2) + \
+                         "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='obsidian'/>".format(-self.size-2, self.size+2, self.size+2, self.size+2)                  
+        south_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='obsidian'/>".format(-self.size-2, self.size+2, -self.size-2, -self.size-2) + \
+                         "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='obsidian'/>".format(-self.size-2, self.size+2, -self.size-2, -self.size-2)
+        walls_xml = west_wall_xml + east_wall_xml + north_wall_xml + south_wall_xml
 
         zombies_xml = []
-        zombie_locations = set()
-   
+        zombie_locations = set()  
         for i in range(self.num_zombies):
             x = random.randint(-self.size,self.size + 1)
             z = random.randint(-self.size,self.size + 1)
@@ -154,14 +153,13 @@ class Moobloom(gym.Env):
                 z = random.randint(-self.size,self.size + 1)
             zombie_locations.add((x,z))
             zombies_xml.append("<DrawEntity x='"+str(x)+"' y='2' z='"+str(z)+"' type='Zombie' />")
-         
         zombies_xml = ''.join(zombies_xml)
 
         return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
                     <About>
-                        <Summary>Diamond Collector</Summary>
+                        <Summary>TheWalkingDead</Summary>
                     </About>
 
                     <ServerSection>
@@ -177,8 +175,9 @@ class Moobloom(gym.Env):
                             <FlatWorldGenerator generatorString="3;7,2;1;"/>
                             <DrawingDecorator>''' + \
                                 "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='air'/>".format(-900, 900, -900, 900) + \
-                                "<DrawCuboid x1='{}' x2='{}' y1='1' y2='1' z1='{}' z2='{}' type='stone'/>".format(-self.size, self.size, -self.size, self.size) + \
+                                "<DrawCuboid x1='{}' x2='{}' y1='1' y2='1' z1='{}' z2='{}' type='obsidian'/>".format(-self.size, self.size, -self.size, self.size) + \
                                 zombies_xml + \
+                                walls_xml + \
                                 '''<DrawBlock x='0'  y='2' z='0' type='air' />
                             </DrawingDecorator>
                             <ServerQuitWhenAnyAgentFinishes/>
@@ -186,7 +185,7 @@ class Moobloom(gym.Env):
                     </ServerSection>
 
                     <AgentSection mode="Survival">
-                        <Name>CS175Moobloom</Name>
+                        <Name>CS175TheWalkingDead</Name>
                         <AgentStart>
                             <Placement x="0.5" y="2" z="0.5" pitch="45" yaw="0"/>
                         </AgentStart>
@@ -220,7 +219,7 @@ class Moobloom(gym.Env):
 
         for retry in range(max_retries):
             try:
-                self.agent_host.startMission( my_mission, my_clients, my_mission_record, 0, 'Moobloom' )
+                self.agent_host.startMission( my_mission, my_clients, my_mission_record, 0, 'TheWalkingDead' )
                 break
             except RuntimeError as e:
                 if retry == max_retries - 1:
@@ -269,8 +268,6 @@ class Moobloom(gym.Env):
                     time.sleep(0.1)
                     msg = world_state.observations[-1].text
                     observations = json.loads(msg)
-                    print(observations)
-                    print(2)
                 
                 # Record any new damage that is taken for negative reward later
                 damage_taken = observations['DamageTaken']
@@ -280,7 +277,7 @@ class Moobloom(gym.Env):
                 # Get observation
                 agent_location = None
                 for entity in observations['Zombie']:
-                    if entity['name'] == 'CS175Moobloom':
+                    if entity['name'] == 'CS175TheWalkingDead':
                         agent_location = (entity['x']+self.obs_size//2, entity['z']+self.obs_size//2)
                         break                   
                 zombie_locations = list((agent_location[0]-entity['x'], agent_location[1]-entity['z']) for entity in observations['Zombie'] if entity['name'] == 'Zombie')                              
@@ -307,6 +304,7 @@ class Moobloom(gym.Env):
 
                 # Check if there is a zombie in front of agent
                 self.facing_zombie = observations['LineOfSight']['type'] == 'Zombie'
+                self.facing_wall = observations['LineOfSight']['type'] == 'obsidian'
                 
                 break
         
@@ -324,7 +322,7 @@ class Moobloom(gym.Env):
         returns_smooth = np.convolve(self.returns[1:], box, mode='same')
         plt.clf()
         plt.plot(self.steps[1:], returns_smooth)
-        plt.title('Moobloom')
+        plt.title('TheWalkingDead')
         plt.ylabel('Return')
         plt.xlabel('Steps')
         plt.savefig('returns.png')
@@ -336,18 +334,18 @@ class Moobloom(gym.Env):
 
 if __name__ == '__main__':
     ray.init()
-    trainer = ppo.PPOTrainer(env=Moobloom, config={
+    trainer = ppo.PPOTrainer(env=TheWalkingDead, config={
         'env_config': {},           # No environment parameters to configure
         'framework': 'torch',       # Use pyotrch instead of tensorflow
         'num_gpus': 0,              # We aren't using GPUs
         'num_workers': 0            # We aren't using parallelism
     })
 
-    trainer.load_checkpoint("C:\\Users\\Owner\\Desktop\\Malmo\\Python_Examples\\checkpoint-36")
+    # trainer.load_checkpoint(Path().absolute() + "\\checkpoint-36")
     i = 0
     while True:
         print(trainer.train())
         i += 1
         if i % 2 == 0:
-            checkpoint = trainer.save_checkpoint("C:\\Users\\Owner\\Desktop\\Malmo\\Python_Examples")
+            checkpoint = trainer.save_checkpoint(Path().absolute())
             print("checkpoint saved")
