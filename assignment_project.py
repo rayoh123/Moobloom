@@ -40,7 +40,7 @@ class TheWalkingDead(gym.Env):
         }
         # Rllib Parameters
         self.action_space = Discrete(len(self.action_dict))
-        self.observation_space = Box(0, 1, shape=(self.obs_size * self.obs_size,), dtype=np.float32)
+        self.observation_space = Box(0, 1, shape=(2 * self.obs_size * self.obs_size,), dtype=np.float32)
 
         # Malmo Parameters
         self.agent_host = MalmoPython.AgentHost()
@@ -52,13 +52,15 @@ class TheWalkingDead(gym.Env):
             exit(1)
 
         # TheWalkingDead Parameters
+        self.is_begin = True
         self.facing_zombie = False
         self.facing_wall = False
-        self.num_zombies = 3
-        self.num_creepers = 3
+        self.num_zombies = 1
+        self.num_creepers = 1
         self.damage_taken_so_far = 0
         self.new_damage_taken = 0
         self.obs = None
+        self.prev_observation = None
         self.episode_step = 0
         self.episode_return = 0
         self.returns = []
@@ -105,8 +107,13 @@ class TheWalkingDead(gym.Env):
             done: <bool> indicates terminal state
             info: <dict> dictionary of extra information
         """
+        # get night vision
+        if self.is_begin:
+            self.agent_host.sendCommand('chat /effect @p night_vision 999 99')
+            self.is_begin = False
+            
         # Get Action
-        if not self.facing_zombie or (self.facing_zombie and action != 'move 1'):
+        if (self.facing_zombie and action != 'move 1') or (self.facing_wall and action != 'move 1'):
             command = self.action_dict[action]
             self.agent_host.sendCommand(command)
             self.episode_step += 1
@@ -132,40 +139,32 @@ class TheWalkingDead(gym.Env):
     def get_mission_xml(self):
         # Draw walls around the arena
         # Draw west wall
-        west_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='obsidian'/>".format(
-            -self.size - 1, -self.size - 1, self.size + 1, -self.size - 1) + \
-                        "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='obsidian'/>".format(
+        west_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='6' z1='{}' z2='{}' type='obsidian'/>".format(
                             -self.size - 1, -self.size - 1, self.size + 1, -self.size - 1)
-        east_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='obsidian'/>".format(
-            self.size + 1, self.size + 1, self.size + 1, -self.size - 1) + \
-                        "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='obsidian'/>".format(
+        east_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='6' z1='{}' z2='{}' type='obsidian'/>".format(
                             self.size + 1, self.size + 1, self.size + 1, -self.size - 1)
-        north_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='obsidian'/>".format(
-            -self.size - 1, self.size + 1, self.size + 1, self.size + 1) + \
-                         "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='obsidian'/>".format(
-                             -self.size - 1, self.size + 1, self.size + 1, self.size + 1)
-        south_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='obsidian'/>".format(
-            -self.size - 1, self.size + 1, -self.size - 1, -self.size - 1) + \
-                         "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='obsidian'/>".format(
-                             -self.size - 1, self.size + 1, -self.size - 1, -self.size - 1)
+        north_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='6' z1='{}' z2='{}' type='obsidian'/>".format(
+                            -self.size - 1, self.size + 1, self.size + 1, self.size + 1)
+        south_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='5' z1='{}' z2='{}' type='obsidian'/>".format(
+                            -self.size - 1, self.size + 1, -self.size - 1, -self.size - 1)
         walls_xml = west_wall_xml + east_wall_xml + north_wall_xml + south_wall_xml
 
-        def _creature_xml_maker(entity_name: str, num_entities: int):
+        def _creature_xml_maker(entity_name: str, num_entities: int) -> str:
             creature_xml = []
             creature_locations = set()
             for i in range(num_entities):
-                x = random.randint(-self.size, self.size + 1)
-                z = random.randint(-self.size, self.size + 1)
+                x = random.randint(-self.size + 1, self.size)
+                z = random.randint(-self.size + 1, self.size)
                 while (x, z) in creature_locations:
-                    x = random.randint(-self.size, self.size + 1)
-                    z = random.randint(-self.size, self.size + 1)
+                    x = random.randint(-self.size + 1, self.size)
+                    z = random.randint(-self.size + 1, self.size)
                 creature_locations.add((x, z))
                 creature_xml.append("<DrawEntity x='" + str(x) + "' y='2' z='" + str(z) + f"' type='{entity_name}' />")
             creature_xml = ''.join(creature_xml)
             return creature_xml
 
-        zombies_xml = _creature_xml_maker('Zombie', self.num_zombies, self.size)
-        creepers_xml = _creature_xml_maker('Creeper', self.num_creepers, self.size)
+        zombies_xml = _creature_xml_maker('Zombie', self.num_zombies)
+        creepers_xml = _creature_xml_maker('Creeper', self.num_creepers)
 
         return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -186,26 +185,26 @@ class TheWalkingDead(gym.Env):
                         <ServerHandlers>
                             <FlatWorldGenerator generatorString="3;7,2;1;"/>
                             <DrawingDecorator>''' + \
-           "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='air'/>".format(-900, 900, -900, 900) + \
-           "<DrawCuboid x1='{}' x2='{}' y1='1' y2='1' z1='{}' z2='{}' type='obsidian'/>".format(-self.size, self.size,
-                                                                                                -self.size, self.size) + \
-           zombies_xml + \
-           creepers_xml + \
-           walls_xml + \
-           '''<DrawBlock x='0'  y='2' z='0' type='air' />
-       </DrawingDecorator>
-       <ServerQuitWhenAnyAgentFinishes/>
-   </ServerHandlers>
-</ServerSection>
-
-<AgentSection mode="Survival">
-   <Name>CS175TheWalkingDead</Name>
-   <AgentStart>
-       <Placement x="0.5" y="2" z="0.5" pitch="45" yaw="0"/>
-   </AgentStart>
-   <AgentHandlers>''' + \
-           f'''<ObservationFromNearbyEntities>
+                               "<DrawCuboid x1='{}' x2='{}' y1='2' y2='7' z1='{}' z2='{}' type='air'/>".format(-100, 100, -100, 100) + \
+                               "<DrawCuboid x1='{}' x2='{}' y1='1' y2='1' z1='{}' z2='{}' type='obsidian'/>".format(-self.size, self.size,-self.size, self.size) + \
+                               zombies_xml + \
+                               creepers_xml + \
+                               walls_xml + \
+                               '''<DrawBlock x='0'  y='2' z='0' type='air' />
+                               </DrawingDecorator>
+                               <ServerQuitWhenAnyAgentFinishes/>
+                           </ServerHandlers>                           
+                        </ServerSection>
+                        
+                        <AgentSection mode="Survival">
+                           <Name>CS175TheWalkingDead</Name>
+                           <AgentStart>
+                               <Placement x="0.5" y="2" z="0.5" pitch="45" yaw="0"/>
+                           </AgentStart>
+                           <AgentHandlers>''' + \
+                           f'''<ObservationFromNearbyEntities>
                                 <Range name="Zombie" xrange="{self.obs_size // 2}" yrange="1" zrange="{self.obs_size // 2}"/>
+                                <Range name="Creeper" xrange="{self.obs_size // 2}" yrange="1" zrange="{self.obs_size // 2}"/>
                             </ObservationFromNearbyEntities>
                             <ObservationFromFullStats/>
                             <ObservationFromRay/>
@@ -218,137 +217,148 @@ class TheWalkingDead(gym.Env):
                 </Mission>'''
 
 
-def init_malmo(self):
-    """
-    Initialize new malmo mission.
-    """
-    self.is_begin = True
-    my_mission = MalmoPython.MissionSpec(self.get_mission_xml(), True)
-    my_mission_record = MalmoPython.MissionRecordSpec()
-    my_mission.requestVideo(800, 500)
-    my_mission.setViewpoint(1)
+    def init_malmo(self):
+        """
+        Initialize new malmo mission.
+        """
+        self.is_begin = True
+        my_mission = MalmoPython.MissionSpec(self.get_mission_xml(), True)
+        my_mission_record = MalmoPython.MissionRecordSpec()
+        my_mission.requestVideo(800, 500)
+        my_mission.setViewpoint(1)
 
-    max_retries = 3
-    my_clients = MalmoPython.ClientPool()
-    my_clients.add(MalmoPython.ClientInfo('127.0.0.1', 10000))  # add Minecraft machines here as available
+        max_retries = 3
+        my_clients = MalmoPython.ClientPool()
+        my_clients.add(MalmoPython.ClientInfo('127.0.0.1', 10000))  # add Minecraft machines here as available
 
-    for retry in range(max_retries):
-        try:
-            self.agent_host.startMission(my_mission, my_clients, my_mission_record, 0, 'TheWalkingDead')
-            break
-        except RuntimeError as e:
-            if retry == max_retries - 1:
-                print("Error starting mission:", e)
-                exit(1)
-            else:
-                time.sleep(2)
+        for retry in range(max_retries):
+            try:
+                self.agent_host.startMission(my_mission, my_clients, my_mission_record, 0, 'TheWalkingDead')
+                break
+            except RuntimeError as e:
+                if retry == max_retries - 1:
+                    print("Error starting mission:", e)
+                    exit(1)
+                else:
+                    time.sleep(2)
 
-    world_state = self.agent_host.getWorldState()
-    while not world_state.has_mission_begun:
-        time.sleep(0.1)
         world_state = self.agent_host.getWorldState()
-        for error in world_state.errors:
-            print("\nError:", error.text)
+        while not world_state.has_mission_begun:
+            time.sleep(0.1)
+            world_state = self.agent_host.getWorldState()
+            for error in world_state.errors:
+                print("\nError:", error.text)
 
-    return world_state
+        return world_state
 
 
-def get_observation(self, world_state):
-    """
-    Use the agent observation API to get a flattened 1 x 5 x 5 grid around the agent.
-    The agent is in the center square facing up.
+    def get_observation(self, world_state):
+        """
+        Use the agent observation API to get a flattened 1 x 5 x 5 grid around the agent.
+        The agent is in the center square facing up.
 
-    Args
-        world_state: <object> current agent world state
+        Args
+            world_state: <object> current agent world state
 
-    Returns
-        observation: <np.array> the state observation
-    """
+        Returns
+            observation: <np.array> the state observation
+        """
 
-    obs = np.zeros((self.obs_size * self.obs_size,))
+        obs = np.zeros((2 * self.obs_size * self.obs_size,))
 
-    while world_state.is_mission_running:
-        time.sleep(0.1)
-        world_state = self.agent_host.getWorldState()
-        if len(world_state.errors) > 0:
-            raise AssertionError('Could not load grid.')
+        while world_state.is_mission_running:
+            time.sleep(0.1)
+            world_state = self.agent_host.getWorldState()
+            if len(world_state.errors) > 0:
+                raise AssertionError('Could not load grid.')
 
-        if world_state.number_of_observations_since_last_state > 0:
-            # First we get the json from the observation API
-            msg = world_state.observations[-1].text
-            observations = json.loads(msg)
-            while 'DamageTaken' not in observations \
-                    or 'Zombie' not in observations \
-                    or 'Yaw' not in observations \
-                    or 'LineOfSight' not in observations:
-                time.sleep(0.1)
+            if world_state.number_of_observations_since_last_state > 0:
+                # First we get the json from the observation API
                 msg = world_state.observations[-1].text
                 observations = json.loads(msg)
+                i = 0
+                while 'DamageTaken' not in observations or 'Zombie' not in observations or 'Yaw' not in observations or 'LineOfSight' not in observations:
+                    i += 1
+                    print("STUCK HERE", observations)
+                    time.sleep(0.1)
+                    msg = world_state.observations[-1].text
+                    observations = json.loads(msg)
+                    if i == 5:
+                        observations = self.prev_observation
+                        break
 
-            # Record any new damage that is taken for negative reward later
-            damage_taken = observations['DamageTaken']
-            self.new_damage_taken = damage_taken - self.damage_taken_so_far
-            self.damage_taken_so_far = damage_taken
+                # Record any new damage that is taken for negative reward later
+                damage_taken = observations['DamageTaken']
+                self.new_damage_taken = damage_taken - self.damage_taken_so_far
+                self.damage_taken_so_far = damage_taken
 
-            # Get observation
-            agent_location = None
-            for entity in observations['Zombie']:
-                if entity['name'] == 'CS175TheWalkingDead':
-                    agent_location = (entity['x'] + self.obs_size // 2, entity['z'] + self.obs_size // 2)
-                    break
-            zombie_locations = list(
-                (agent_location[0] - entity['x'], agent_location[1] - entity['z']) for entity in observations['Zombie']
-                if entity['name'] == 'Zombie')
-            for i in range(self.obs_size * self.obs_size):
-                obs[i] = False
+                # Get observation
+                agent_location = None
+                for entity in observations['Zombie']:
+                    if entity['name'] == 'CS175TheWalkingDead':
+                        agent_location = (entity['x'] + self.obs_size // 2, entity['z'] + self.obs_size // 2)
+                        break
 
-            for x, z in zombie_locations:
-                obs[math.floor(z) + math.floor(x) * self.obs_size] = True
+                # Put zombies into observation array
+                zombie_locations = list((agent_location[0] - entity['x'], agent_location[1] - entity['z']) for entity in observations['Zombie'] if entity['name'] == 'Zombie')
+                for i in range(self.obs_size * self.obs_size):
+                    obs[i] = False
 
-            #                 grid = observations['floorAll']
-            #                 for i, x in enumerate(grid):
-            #                     obs[i] = x == 'diamond_ore' or x == 'lava'
+                for x, z in zombie_locations:
+                    obs[math.floor(z) + math.floor(x) * self.obs_size] = True
 
-            # Rotate observation with orientation of agent
-            obs = obs.reshape((1, self.obs_size, self.obs_size))
-            yaw = observations['Yaw']
-            if yaw >= 225 and yaw < 315:
-                obs = np.rot90(obs, k=1, axes=(1, 2))
-            elif yaw >= 315 or yaw < 45:
-                obs = np.rot90(obs, k=2, axes=(1, 2))
-            elif yaw >= 45 and yaw < 135:
-                obs = np.rot90(obs, k=3, axes=(1, 2))
-            obs = obs.flatten()
+                # Put creepers into observation array
+                creeper_locations = list((agent_location[0] - entity['x'], agent_location[1] - entity['z']) for entity in observations['Creeper'] if entity['name'] == 'Creeper')
+                for i in range(self.obs_size * self.obs_size, 2 * self.obs_size * self.obs_size):
+                    obs[i] = False
 
-            # Check if there is a zombie in front of agent
-            self.facing_zombie = observations['LineOfSight']['type'] == 'Zombie'
-            self.facing_wall = observations['LineOfSight']['type'] == 'obsidian'
+                for x, z in creeper_locations:
+                    obs[self.obs_size * self.obs_size + math.floor(z) + math.floor(x) * self.obs_size] = True
 
-            break
+                #                 grid = observations['floorAll']
+                #                 for i, x in enumerate(grid):
+                #                     obs[i] = x == 'diamond_ore' or x == 'lava'
 
-    return obs
+                # Rotate observation with orientation of agent
+                obs = obs.reshape((2, self.obs_size, self.obs_size))
+                yaw = observations['Yaw']
+                if yaw >= 225 and yaw < 315:
+                    obs = np.rot90(obs, k=1, axes=(1, 2))
+                elif yaw >= 315 or yaw < 45:
+                    obs = np.rot90(obs, k=2, axes=(1, 2))
+                elif yaw >= 45 and yaw < 135:
+                    obs = np.rot90(obs, k=3, axes=(1, 2))
+                obs = obs.flatten()
+
+                # Check if there is a zombie in front of agent
+                self.facing_zombie = observations['LineOfSight']['type'] == 'Zombie'
+                self.facing_wall = observations['LineOfSight']['type'] == 'obsidian'
+
+                break
+
+        return obs
 
 
-def log_returns(self):
-    """
-    Log the current returns as a graph and text file
+    def log_returns(self):
+        """
+        Log the current returns as a graph and text file
 
-    Args:
-        steps (list): list of global steps after each episode
-        returns (list): list of total return of each episode
-    """
-    box = np.ones(self.log_frequency) / self.log_frequency
-    returns_smooth = np.convolve(self.returns[1:], box, mode='same')
-    plt.clf()
-    plt.plot(self.steps[1:], returns_smooth)
-    plt.title('TheWalkingDead')
-    plt.ylabel('Return')
-    plt.xlabel('Steps')
-    plt.savefig('returns.png')
+        Args:
+            steps (list): list of global steps after each episode
+            returns (list): list of total return of each episode
+        """
+        box = np.ones(self.log_frequency) / self.log_frequency
+        returns_smooth = np.convolve(self.returns[1:], box, mode='same')
+        plt.clf()
+        plt.plot(self.steps[1:], returns_smooth)
+        plt.title('TheWalkingDead')
+        plt.ylabel('Return')
+        plt.xlabel('Steps')
+        plt.savefig('returns.png')
 
-    with open('returns.txt', 'w') as f:
-        for step, value in zip(self.steps[1:], self.returns[1:]):
-            f.write("{}\t{}\n".format(step, value))
+        with open('returns.txt', 'w') as f:
+            for step, value in zip(self.steps[1:], self.returns[1:]):
+                f.write("{}\t{}\n".format(step, value))
 
 
 if __name__ == '__main__':
