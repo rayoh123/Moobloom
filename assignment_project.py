@@ -155,6 +155,7 @@ class TheWalkingDead(gym.Env):
 	            creature_locations.add((x,z))
 	            creature_xml.append("<DrawEntity x='"+str(x)+"' y='2' z='"+str(z)+f"' type='{entity_name}' />")
 	        creature_xml = ''.join(creature_xml)
+	        return creature_xml
 
 	    zombies_xml = _creature_xml_maker('Zombie', self.num_zombies, self.size)
 	    creepers_xml = _creature_xml_maker('Creeper', self.num_creepers, self.size)
