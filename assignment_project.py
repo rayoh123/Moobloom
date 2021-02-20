@@ -133,27 +133,31 @@ class TheWalkingDead(gym.Env):
     def get_mission_xml(self):
         # Draw walls around the arena
         # Draw west wall
-        west_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='obsidian'/>".format(-self.size-2, -self.size-2, self.size+2, -self.size-2) + \
-                        "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='obsidian'/>".format(-self.size-1, -self.size-1, self.size+2, -self.size-2)                       
-        east_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='obsidian'/>".format(self.size+2, self.size+2, self.size+2, -self.size-2) + \
-                        "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='obsidian'/>".format(self.size+2, self.size+2, self.size+2, -self.size-2)
-        north_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='obsidian'/>".format(-self.size-2, self.size+2, self.size+2, self.size+2) + \
-                         "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='obsidian'/>".format(-self.size-2, self.size+2, self.size+2, self.size+2)                  
-        south_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='obsidian'/>".format(-self.size-2, self.size+2, -self.size-2, -self.size-2) + \
-                         "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='obsidian'/>".format(-self.size-2, self.size+2, -self.size-2, -self.size-2)
+        west_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='obsidian'/>".format(-self.size-1, -self.size-1, self.size+1, -self.size-1) + \
+                        "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='obsidian'/>".format(-self.size-1, -self.size-1, self.size+1, -self.size-1)                       
+        east_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='obsidian'/>".format(self.size+1, self.size+1, self.size+1, -self.size-1) + \
+                        "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='obsidian'/>".format(self.size+1, self.size+1, self.size+1, -self.size-1)
+        north_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='obsidian'/>".format(-self.size-1, self.size+1, self.size+1, self.size+1) + \
+                         "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='obsidian'/>".format(-self.size-1, self.size+1, self.size+1, self.size+1)                  
+        south_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='obsidian'/>".format(-self.size-1, self.size+1, -self.size-1, -self.size-1) + \
+                         "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='obsidian'/>".format(-self.size-1, self.size+1, -self.size-1, -self.size-1)
         walls_xml = west_wall_xml + east_wall_xml + north_wall_xml + south_wall_xml
 
-        zombies_xml = []
-        zombie_locations = set()  
-        for i in range(self.num_zombies):
-            x = random.randint(-self.size,self.size + 1)
-            z = random.randint(-self.size,self.size + 1)
-            while (x,z) in zombie_locations:
-                x = random.randint(-self.size,self.size + 1)
-                z = random.randint(-self.size,self.size + 1)
-            zombie_locations.add((x,z))
-            zombies_xml.append("<DrawEntity x='"+str(x)+"' y='2' z='"+str(z)+"' type='Zombie' />")
-        zombies_xml = ''.join(zombies_xml)
+        def _creature_xml_maker(entity_name: str, num_entities: int):
+        	creature_xml = []
+	        creature_locations = set()  
+	        for i in range(num_entities):
+	            x = random.randint(-self.size, self.size + 1)
+	            z = random.randint(-self.size, self.size + 1)
+	            while (x,z) in creature_locations:
+	                x = random.randint(-self.size, self.size + 1)
+	                z = random.randint(-self.size, self.size + 1)
+	            creature_locations.add((x,z))
+	            creature_xml.append("<DrawEntity x='"+str(x)+"' y='2' z='"+str(z)+f"' type='{entity_name}' />")
+	        creature_xml = ''.join(creature_xml)
+
+	    zombies_xml = _creature_xml_maker('Zombie', self.num_zombies, self.size)
+	    creepers_xml = _creature_xml_maker('Creeper', self.num_creepers, self.size)
 
         return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -177,6 +181,7 @@ class TheWalkingDead(gym.Env):
                                 "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='air'/>".format(-900, 900, -900, 900) + \
                                 "<DrawCuboid x1='{}' x2='{}' y1='1' y2='1' z1='{}' z2='{}' type='obsidian'/>".format(-self.size, self.size, -self.size, self.size) + \
                                 zombies_xml + \
+                                creepers_xml + \
                                 walls_xml + \
                                 '''<DrawBlock x='0'  y='2' z='0' type='air' />
                             </DrawingDecorator>
