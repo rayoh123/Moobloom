@@ -5,6 +5,9 @@ title:  Home
 
 ![](Resources/THEWALKINGDEAD.gif)  
 
+**Project Summary:**
+The goal of our project is to train our agent to be adept at evading hostile mobs such as zombies, skeletons, and creepers while learning that passive mobs like cows, sheep, and pigs are safe. This is an interesting thing to do because a common issue for Minecraft players is trying to avoid death via hostile mobs in their first few in-game nights. It will be interesting to see if an AI trained with reinforcement learning would be able to mimick the same escape strategies employed by human players.
+
 **[SORCE CODE](https://github.com/rayoh123/TheWalkingDead)**
 
 **REPORTS:**
@@ -14,10 +17,6 @@ title:  Home
 - [Final](final.html)
 
 Our team meets at least once every week, at 3:30 PM each Friday
-
-The goal of our project is to train our agent to be adept at evading hostile mobs such as zombies, 
-skeletons, and creepers while learning that passive mobs like cows, sheep, and pigs are safe.
-
 
 Relevant Resources:
 - [OpenAI PPO Algorithm](https://openai.com/blog/openai-baselines-ppo/) OpenAI's introduction to its PPO algorithm.
