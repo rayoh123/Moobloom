@@ -286,7 +286,8 @@ class TheWalkingDead(gym.Env):
                     if i == 5:
                         observations = self.prev_observation
                         break
-
+                self.prev_observation = observations
+                
                 # Record any new damage that is taken for negative reward later
                 damage_taken = observations['DamageTaken']
                 self.new_damage_taken = damage_taken - self.damage_taken_so_far
