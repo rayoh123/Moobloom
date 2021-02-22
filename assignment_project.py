@@ -56,7 +56,7 @@ class TheWalkingDead(gym.Env):
         self.facing_zombie = False
         self.facing_wall = False
         self.num_zombies = 1
-        self.num_creepers = 1
+        self.num_creepers = 0
         self.damage_taken_so_far = 0
         self.new_damage_taken = 0
         self.obs = None
@@ -65,7 +65,7 @@ class TheWalkingDead(gym.Env):
         self.episode_return = 0
         self.returns = []
         self.steps = []
-        self.max_episode_steps = 100
+        self.max_episode_steps = 200
 
     def reset(self):
         """
@@ -113,7 +113,7 @@ class TheWalkingDead(gym.Env):
             self.is_begin = False
             
         # Get Action
-        if (self.facing_zombie and action != 'move 1') or (self.facing_wall and action != 'move 1'):
+        if action != 'move 1' or (not self.facing_wall and not self.facing_zombie):
             command = self.action_dict[action]
             self.agent_host.sendCommand(command)
             self.episode_step += 1
@@ -186,7 +186,7 @@ class TheWalkingDead(gym.Env):
                             <FlatWorldGenerator generatorString="3;7,2;1;"/>
                             <DrawingDecorator>''' + \
                                "<DrawCuboid x1='{}' x2='{}' y1='2' y2='7' z1='{}' z2='{}' type='air'/>".format(-100, 100, -100, 100) + \
-                               "<DrawCuboid x1='{}' x2='{}' y1='1' y2='1' z1='{}' z2='{}' type='obsidian'/>".format(-self.size, self.size,-self.size, self.size) + \
+                               "<DrawCuboid x1='{}' x2='{}' y1='1' y2='1' z1='{}' z2='{}' type='end_portal_frame'/>".format(-self.size, self.size,-self.size, self.size) + \
                                zombies_xml + \
                                creepers_xml + \
                                walls_xml + \
