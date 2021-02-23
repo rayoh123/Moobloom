@@ -1,5 +1,4 @@
 # Rllib docs: https://docs.ray.io/en/latest/rllib.html
-#testy test
 
 try:
     from malmo import MalmoPython
