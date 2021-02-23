@@ -56,6 +56,7 @@ class Moobloom(gym.Env):
         self.damage_taken_so_far = 0
         self.new_damage_taken = 0
         self.obs = None
+        self.prev_observation = None
         self.episode_step = 0
         self.episode_return = 0
         self.returns = []
@@ -103,7 +104,7 @@ class Moobloom(gym.Env):
             info: <dict> dictionary of extra information
         """
         # Get Action
-        if not self.facing_zombie or (self.facing_zombie and action != 'move 1'):
+        if action != 'move 1' or not self.facing_zombie:
             command = self.action_dict[action]
             self.agent_host.sendCommand(command)
             self.episode_step += 1
@@ -262,16 +263,19 @@ class Moobloom(gym.Env):
                 # First we get the json from the observation API
                 msg = world_state.observations[-1].text
                 observations = json.loads(msg)
-                while 'DamageTaken' not in observations \
-                      or 'Zombie' not in observations \
-                      or 'Yaw' not in observations \
-                      or 'LineOfSight' not in observations:
+                i = 0
+                while 'DamageTaken' not in observations or 'Zombie' not in observations or 'Yaw' not in observations or 'LineOfSight' not in observations:
+                    i += 1
+                    if i == 5:
+                        observations = self.prev_observation
+                        break
                     time.sleep(0.1)
                     msg = world_state.observations[-1].text
                     observations = json.loads(msg)
                     print(observations)
                     print(2)
                 
+                self.prev_observation = observations
                 # Record any new damage that is taken for negative reward later
                 damage_taken = observations['DamageTaken']
                 self.new_damage_taken = damage_taken - self.damage_taken_so_far
@@ -343,7 +347,7 @@ if __name__ == '__main__':
         'num_workers': 0            # We aren't using parallelism
     })
 
-    trainer.load_checkpoint("C:\\Users\\Owner\\Desktop\\Malmo\\Python_Examples\\checkpoint-36")
+    #trainer.load_checkpoint("C:\\Users\\Owner\\Desktop\\Malmo\\Python_Examples\\checkpoint-36")
     i = 0
     while True:
         print(trainer.train())
