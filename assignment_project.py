@@ -39,8 +39,9 @@ class TheWalkingDead(gym.Env):
 
         }
         # Rllib Parameters
+        self.num_diff_creatures = 2
         self.action_space = Discrete(len(self.action_dict))
-        self.observation_space = Box(0, 1, shape=(2 * self.obs_size * self.obs_size,), dtype=np.float32)
+        self.observation_space = Box(0, 1, shape=(self.num_diff_creatures * self.obs_size * self.obs_size,), dtype=np.float32)
 
         # Malmo Parameters
         self.agent_host = MalmoPython.AgentHost()
@@ -54,9 +55,10 @@ class TheWalkingDead(gym.Env):
         # TheWalkingDead Parameters
         self.is_begin = True
         self.facing_zombie = False
-        self.facing_wall = False
+        self.facing_creeper = False
+        self.facing_wall = False       
         self.num_zombies = 1
-        self.num_creepers = 0
+        self.num_creepers = 1
         self.damage_taken_so_far = 0
         self.new_damage_taken = 0
         self.obs = None
@@ -65,7 +67,7 @@ class TheWalkingDead(gym.Env):
         self.episode_return = 0
         self.returns = []
         self.steps = []
-        self.max_episode_steps = 200
+        self.max_episode_steps = 100
 
     def reset(self):
         """
@@ -113,7 +115,7 @@ class TheWalkingDead(gym.Env):
             self.is_begin = False
             
         # Get Action
-        if action != 'move 1' or (not self.facing_wall and not self.facing_zombie):
+        if action != 'move 1' or (not self.facing_creeper and not self.facing_zombie and not self.facing_wall):
             command = self.action_dict[action]
             self.agent_host.sendCommand(command)
             self.episode_step += 1
@@ -186,7 +188,8 @@ class TheWalkingDead(gym.Env):
                             <FlatWorldGenerator generatorString="3;7,2;1;"/>
                             <DrawingDecorator>''' + \
                                "<DrawCuboid x1='{}' x2='{}' y1='2' y2='7' z1='{}' z2='{}' type='air'/>".format(-100, 100, -100, 100) + \
-                               "<DrawCuboid x1='{}' x2='{}' y1='1' y2='1' z1='{}' z2='{}' type='end_portal_frame'/>".format(-self.size, self.size,-self.size, self.size) + \
+                               "<DrawCuboid x1='{}' x2='{}' y1='1' y2='1' z1='{}' z2='{}' type='obsidian'/>".format(-200, 200,-200, 200) + \
+                               "<DrawCuboid x1='{}' x2='{}' y1='1' y2='1' z1='{}' z2='{}' type='obsidian'/>".format(-self.size, self.size,-self.size, self.size) + \
                                zombies_xml + \
                                creepers_xml + \
                                walls_xml + \
@@ -333,6 +336,7 @@ class TheWalkingDead(gym.Env):
 
                 # Check if there is a zombie in front of agent
                 self.facing_zombie = observations['LineOfSight']['type'] == 'Zombie'
+                self.facing_creeper = observations['LineOfSight']['type'] == 'Creeper'
                 self.facing_wall = observations['LineOfSight']['type'] == 'obsidian'
 
                 break
