@@ -151,6 +151,12 @@ class TheWalkingDead(gym.Env):
                             -self.size - 1, self.size + 1, -self.size - 1, -self.size - 1)
         walls_xml = west_wall_xml + east_wall_xml + north_wall_xml + south_wall_xml
 
+        finishline = ''
+        x = self.size - 1
+        for z in range(-self.size, self.size):
+            finishline += f'<DrawBlock x=\'{x}\' y=\'1\' z = \'{z}\' type=\'diamond_block\' />'
+            finishline += '\n' 
+
         def _creature_xml_maker(entity_name: str, num_entities: int) -> str:
             creature_xml = []
             creature_locations = set()
@@ -193,6 +199,7 @@ class TheWalkingDead(gym.Env):
                                zombies_xml + \
                                creepers_xml + \
                                walls_xml + \
+                               finishline + \
                                '''<DrawBlock x='0'  y='2' z='0' type='air' />
                                </DrawingDecorator>
                                <ServerQuitWhenAnyAgentFinishes/>
@@ -212,9 +219,15 @@ class TheWalkingDead(gym.Env):
                             <ObservationFromFullStats/>
                             <ObservationFromRay/>
                             <RewardForTimeTaken initialReward="10" delta="+2" density="PER_TICK" />
+                            <RewardForTouchingBlockType>
+                                <Block type="diamond_block" reward="100" />                                    
+                            </RewardForTouchingBlockType>
                             <DiscreteMovementCommands/>
                             <ChatCommands/>
                             <AgentQuitFromReachingCommandQuota total="''' + str(self.max_episode_steps) + '''" />
+                            <AgentQuitFromTouchingBlockType>
+                                <Block type="diamond_block"/>
+                            </AgentQuitFromTouchingBlockType>
                         </AgentHandlers>
                     </AgentSection>
                 </Mission>'''
