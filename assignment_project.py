@@ -38,8 +38,9 @@ class Moobloom(gym.Env):
                                              
         }
         # Rllib Parameters
+        self.num_diff_mobs = 2
         self.action_space =  Discrete(len(self.action_dict)) 
-        self.observation_space = Box(0, 1, shape=(self.obs_size * self.obs_size, ), dtype=np.float32)
+        self.observation_space = Box(0, 1, shape=(self.num_diff_mobs * self.obs_size * self.obs_size, ), dtype=np.float32)
 
         # Malmo Parameters
         self.agent_host = MalmoPython.AgentHost()
@@ -52,7 +53,9 @@ class Moobloom(gym.Env):
 
         # Moobloom Parameters
         self.facing_zombie = False
+        self.facing_wall = False
         self.num_zombies = 1
+        self.num_creepers = 0
         self.damage_taken_so_far = 0
         self.new_damage_taken = 0
         self.obs = None
@@ -103,8 +106,12 @@ class Moobloom(gym.Env):
             done: <bool> indicates terminal state
             info: <dict> dictionary of extra information
         """
+        if self.is_begin:
+            self.agent_host.sendCommand('chat /effect @p night_vision 999 99')
+            self.is_begin = False
+
         # Get Action
-        if action != 'move 1' or not self.facing_zombie:
+        if action != 'move 1' or (not self.facing_zombie and not self.facing_wall):
             command = self.action_dict[action]
             self.agent_host.sendCommand(command)
             self.episode_step += 1
@@ -131,31 +138,25 @@ class Moobloom(gym.Env):
     def get_mission_xml(self):
 #         # Draw walls around the arena
 #         # Draw west wall
-#         west_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, -self.size-1, self.size, -self.size) + \
-#                         "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, -self.size-1, self.size, -self.size)
-#                         
-#         east_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='stone'/>".format(self.size+1, self.size+1, self.size, -self.size) + \
-#                         "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='stone'/>".format(self.size+1, self.size+1, self.size, -self.size)
-# 
-#         north_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, self.size+1, self.size, self.size) + \
-#                          "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, self.size+1, self.size, self.size)
-#                          
-#         south_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, self.size+1, -self.size, -self.size) + \
-#                          "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, self.size+1, -self.size, -self.size)
+        west_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='6' z1='{}' z2='{}' type='end_portal_frame'/>".format(-self.size-1, -self.size-1, self.size, -self.size)
+                        
+        east_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='6' z1='{}' z2='{}' type='end_portal_frame'/>".format(self.size+1, self.size+1, self.size, -self.size)
 
+        north_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='6' z1='{}' z2='{}' type='end_portal_frame'/>".format(-self.size-1, self.size+1, self.size, self.size)
+                         
+        south_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='6' z1='{}' z2='{}' type='end_portal_frame'/>".format(-self.size-1, self.size+1, -self.size, -self.size)
+        walls_xml = west_wall_xml + east_wall_xml + north_wall_xml + south_wall_xml
 
         zombies_xml = []
-        zombie_locations = set()
-   
+        zombie_locations = set()   
         for i in range(self.num_zombies):
-            x = random.randint(-self.size,self.size + 1)
-            z = random.randint(-self.size,self.size + 1)
+            x = random.randint(-self.size+1,self.size)
+            z = random.randint(-self.size+1,self.size)
             while (x,z) in zombie_locations:
-                x = random.randint(-self.size,self.size + 1)
-                z = random.randint(-self.size,self.size + 1)
+                x = random.randint(-self.size+1,self.size)
+                z = random.randint(-self.size+1,self.size)
             zombie_locations.add((x,z))
-            zombies_xml.append("<DrawEntity x='"+str(x)+"' y='2' z='"+str(z)+"' type='Zombie' />")
-         
+            zombies_xml.append("<DrawEntity x='"+str(x)+"' y='2' z='"+str(z)+"' type='Zombie' />")        
         zombies_xml = ''.join(zombies_xml)
 
         return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
@@ -177,9 +178,11 @@ class Moobloom(gym.Env):
                         <ServerHandlers>
                             <FlatWorldGenerator generatorString="3;7,2;1;"/>
                             <DrawingDecorator>''' + \
+                                "<DrawCuboid x1='{}' x2='{}' y1='1' y2='1' z1='{}' z2='{}' type='obsidian'/>".format(-200, 200, -200, 200) + \
                                 "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='air'/>".format(-900, 900, -900, 900) + \
-                                "<DrawCuboid x1='{}' x2='{}' y1='1' y2='1' z1='{}' z2='{}' type='stone'/>".format(-self.size, self.size, -self.size, self.size) + \
+                                "<DrawCuboid x1='{}' x2='{}' y1='1' y2='1' z1='{}' z2='{}' type='obsidian'/>".format(-self.size, self.size, -self.size, self.size) + \
                                 zombies_xml + \
+                                walls_xml + \
                                 '''<DrawBlock x='0'  y='2' z='0' type='air' />
                             </DrawingDecorator>
                             <ServerQuitWhenAnyAgentFinishes/>
@@ -197,6 +200,12 @@ class Moobloom(gym.Env):
                             </ObservationFromNearbyEntities>
                             <ObservationFromFullStats/>
                             <ObservationFromRay/>
+                            <ObservationFromGrid>
+                                <Grid name="floorAll">
+                                    <min x="-'''+str(int(self.obs_size/2))+'''" y="1" z="-'''+str(int(self.obs_size/2))+'''"/>
+                                    <max x="'''+str(int(self.obs_size/2))+'''" y="1" z="'''+str(int(self.obs_size/2))+'''"/>
+                                </Grid>
+                            </ObservationFromGrid>
                             <RewardForTimeTaken initialReward="10" delta="+2" density="PER_TICK" />
                             <DiscreteMovementCommands/>
                             <ChatCommands/>
@@ -251,7 +260,7 @@ class Moobloom(gym.Env):
             observation: <np.array> the state observation
         """
         
-        obs = np.zeros((self.obs_size * self.obs_size, ))
+        obs = np.zeros((self.num_diff_mobs * self.obs_size * self.obs_size, ))
         
         while world_state.is_mission_running:
             time.sleep(0.1)
@@ -264,7 +273,10 @@ class Moobloom(gym.Env):
                 msg = world_state.observations[-1].text
                 observations = json.loads(msg)
                 i = 0
-                while 'DamageTaken' not in observations or 'Zombie' not in observations or 'Yaw' not in observations or 'LineOfSight' not in observations:
+                while 'DamageTaken' not in observations or \
+                'Zombie' not in observations or \
+                'Yaw' not in observations or \
+                'LineOfSight' not in observations:
                     i += 1
                     if i == 5:
                         observations = self.prev_observation
@@ -281,12 +293,14 @@ class Moobloom(gym.Env):
                 self.new_damage_taken = damage_taken - self.damage_taken_so_far
                 self.damage_taken_so_far = damage_taken
 
-                # Get observation
+                # Get agent location
                 agent_location = None
                 for entity in observations['Zombie']:
                     if entity['name'] == 'CS175Moobloom':
                         agent_location = (entity['x']+self.obs_size//2, entity['z']+self.obs_size//2)
-                        break                   
+                        break                       
+
+                # Get zombie locations
                 zombie_locations = list((agent_location[0]-entity['x'], agent_location[1]-entity['z']) for entity in observations['Zombie'] if entity['name'] == 'Zombie')                              
                 for i in range(self.obs_size * self.obs_size):
                     obs[i] = False  
@@ -294,12 +308,13 @@ class Moobloom(gym.Env):
                 for x,z in zombie_locations:
                     obs[math.floor(z) + math.floor(x) * self.obs_size] = True 
 
-#                 grid = observations['floorAll']
-#                 for i, x in enumerate(grid):
-#                     obs[i] = x == 'diamond_ore' or x == 'lava'
+                # get wall locations
+                grid = observations['floorAll']
+                for i,x in enumerate(grid, (self.num_diff_mobs - 1) * self.obs_size ** 2):
+                    obs[i] = x == 'end_portal_frame'
 
                 # Rotate observation with orientation of agent
-                obs = obs.reshape((1, self.obs_size, self.obs_size))
+                obs = obs.reshape((self.num_diff_mobs, self.obs_size, self.obs_size))
                 yaw = observations['Yaw']
                 if yaw >= 225 and yaw < 315:
                     obs = np.rot90(obs, k=1, axes=(1, 2))
@@ -311,7 +326,9 @@ class Moobloom(gym.Env):
 
                 # Check if there is a zombie in front of agent
                 self.facing_zombie = observations['LineOfSight']['type'] == 'Zombie'
-                
+                self.facing_creeper = observations['LineOfSight']['type'] == 'Creeper'
+                self.facing_wall = observations['LineOfSight']['type'] == 'end_portal_frame'
+
                 break
         
         return obs
@@ -355,3 +372,4 @@ if __name__ == '__main__':
         if i % 2 == 0:
             checkpoint = trainer.save_checkpoint("C:\\Users\\Owner\\Desktop\\Malmo\\Python_Examples")
             print("checkpoint saved")
+            
