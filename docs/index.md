@@ -13,7 +13,8 @@ title:  Home
 - [Status](status.html)
 - [Final](final.html)
 
-## [SORCE CODE](https://github.com/rayoh123/TheWalkingDead)
+## SORCE CODE
+### [The Walking Dead](https://github.com/rayoh123/TheWalkingDead)
 
 Our team meets at least once every week, at 3:30 PM each Friday
 
