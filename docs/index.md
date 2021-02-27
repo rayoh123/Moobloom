@@ -13,10 +13,10 @@ title:  Home
 - [Status](status.html)
 - [Final](final.html)
 
+{Our team meets at least once every week, at 3:30 PM each Friday}
+
 ### SORCE CODE
 #### [The Walking Dead](https://github.com/rayoh123/TheWalkingDead)
-
-Our team meets at least once every week, at 3:30 PM each Friday
 
 ### Relevant Resources:
 ##### - [OpenAI PPO Algorithm](https://openai.com/blog/openai-baselines-ppo/) OpenAI's introduction to its PPO algorithm.
