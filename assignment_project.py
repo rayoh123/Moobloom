@@ -17,43 +17,6 @@ import gym, ray
 from gym.spaces import Discrete, Box
 from ray.rllib.agents import ppo
 
-def safeStartMission(agent_host, my_mission, my_client_pool, my_mission_record, role, expID):
-    print("Starting Mission {}.".format(role))
-    max_retries = 5
-    for retry in range(max_retries):
-        try:
-            agent_host.startMission(my_mission, my_client_pool, my_mission_record, role, expID)
-            break
-        except RuntimeError as e:
-            if retry == max_retries - 1:
-                print("Error starting mission:", e)
-                exit(1)
-            else:
-                time.sleep(2)
-
-def safeWaitForStart(agent_hosts):
-    start_flags = [False for a in agent_hosts]
-    start_time = time.time()
-    time_out = 230
-    while not all(start_flags) and time.time() - start_time < time_out:
-        states = [a.peekWorldState() for a in agent_hosts]
-        start_flags = [w.has_mission_begun for w in states]
-        errors = [e for w in states for e in w.errors]
-        if len(errors) > 0:
-            print("Errors waiting for mission start:")
-            for e in errors:
-                print(e.text)
-            exit(1)
-        time.sleep(0.1)
-        print(".", end=" ")
-    if time.time() - start_time >= time_out:
-        print("Timed out while waiting for mission to start.")
-        exit(1)
-    print()
-    print("Mission has started.")
-
-
-
 
 class TheWalkingDead(gym.Env):
 
@@ -62,7 +25,7 @@ class TheWalkingDead(gym.Env):
         self.size = 10
         self.reward_density = .1
         self.penalty_density = .02
-        self.obs_size = 7
+        self.obs_size = 11
         self.max_episode_steps = 100
         self.log_frequency = 10
         self.action_dict = {
@@ -81,7 +44,6 @@ class TheWalkingDead(gym.Env):
 
         # Malmo Parameters
         self.agent_host = MalmoPython.AgentHost()
-        self.video_host = MalmoPython.AgentHost()
         try:
             self.agent_host.parse( sys.argv )
         except RuntimeError as e:
@@ -90,9 +52,9 @@ class TheWalkingDead(gym.Env):
             exit(1)
 
         # TheWalkingDead Parameters
+        self.is_begin = True
         self.facing_zombie = False
         self.facing_creeper = False
-        self.facing_wall = False
         self.num_zombies = 2
         self.num_creepers = 2
         self.damage_taken_so_far = 0
@@ -147,7 +109,7 @@ class TheWalkingDead(gym.Env):
         """
         # Get night vision
         if self.is_begin:
-            self.agent_host.sendCommand('chat /effect @e night_vision 99 99')
+            self.agent_host.sendCommand('chat /effect @p night_vision 999 99')
             self.is_begin = False
 
         # Get Action
@@ -237,7 +199,7 @@ class TheWalkingDead(gym.Env):
                     </ServerSection>
 
                     <AgentSection mode="Survival">
-                        <Name>Walking</Name>
+                        <Name>CS175TheWalkingDead</Name>
                         <AgentStart>
                             <Placement x="0.5" y="2" z="0.5" pitch="45" yaw="0"/>
                         </AgentStart>
@@ -254,46 +216,32 @@ class TheWalkingDead(gym.Env):
                             <AgentQuitFromReachingCommandQuota total="'''+str(self.max_episode_steps)+'''" />
                         </AgentHandlers>
                     </AgentSection>
-
-                    <AgentSection mode="Spectator">
-                        <Name>VideoAgent</Name>
-                        <AgentStart>
-                            <Placement x="0" y="10" z="-5" pitch="60" yaw="0"/>
-                        </AgentStart>
-                        <AgentHandlers>
-                            <DiscreteMovementCommands/>
-                            <VideoProducer>
-                                <Width>860</Width>
-                                <Height>480</Height>
-                            </VideoProducer>
-                        </AgentHandlers>
-                    </AgentSection>
                 </Mission>'''
 
     def init_malmo(self):
         """
         Initialize new malmo mission.
         """
-        self.is_begin = True
-        malmoutils.parse_command_line(self.video_host)
-
         my_mission = MalmoPython.MissionSpec(self.get_mission_xml(), True)
-
         my_mission_record = MalmoPython.MissionRecordSpec()
-        video_recording_spec = MalmoPython.MissionRecordSpec()
         my_mission.requestVideo(800, 500)
         my_mission.setViewpoint(1)
 
+        max_retries = 3
         my_clients = MalmoPython.ClientPool()
         my_clients.add(MalmoPython.ClientInfo('127.0.0.1', 10000)) # add Minecraft machines here as available
-        my_clients.add(MalmoPython.ClientInfo('127.0.0.1', 10001))
-        my_clients.add(MalmoPython.ClientInfo('127.0.0.1', 10002))
 
-        safeStartMission(self.agent_host, my_mission, my_clients, my_mission_record, 0, '')
-        safeStartMission(self.video_host, my_mission, my_clients, video_recording_spec, 1, '')
-        safeWaitForStart([self.video_host, self.agent_host])
+        for retry in range(max_retries):
+            try:
+                self.agent_host.startMission( my_mission, my_clients, my_mission_record, 0, 'TheWalkingDead' )
+                break
+            except RuntimeError as e:
+                if retry == max_retries - 1:
+                    print("Error starting mission:", e)
+                    exit(1)
+                else:
+                    time.sleep(2)
 
-                    
         world_state = self.agent_host.getWorldState()
         while not world_state.has_mission_begun:
             time.sleep(0.1)
@@ -352,7 +300,7 @@ class TheWalkingDead(gym.Env):
                 # Get observation
                 agent_location = None
                 for entity in observations['Zombie']:
-                    if entity['name'] == 'Walking':
+                    if entity['name'] == 'CS175TheWalkingDead':
                         agent_location = (entity['x']+self.obs_size//2, entity['z']+self.obs_size//2)
                         break                 
 
@@ -422,7 +370,7 @@ if __name__ == '__main__':
         'num_workers': 0            # We aren't using parallelism
     })
 
-    # trainer.load_checkpoint("C:\\Users\\Owner\\Desktop\\Malmo\\Python_Examples\\checkpoint-36")
+    # trainer.load_checkpoint("C:\\Users\\Owner\\Desktop\\Malmo\\Python_Examples\\checkpoint-66")
     i = 0
     while True:
         print(trainer.train())
