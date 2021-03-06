@@ -4,7 +4,7 @@ try:
     from malmo import MalmoPython
 except:
     import MalmoPython
-
+import malmoutils
 import sys
 import time
 import json
@@ -17,12 +17,49 @@ import gym, ray
 from gym.spaces import Discrete, Box
 from ray.rllib.agents import ppo
 
+def safeStartMission(agent_host, my_mission, my_client_pool, my_mission_record, role, expID):
+    print("Starting Mission {}.".format(role))
+    max_retries = 5
+    for retry in range(max_retries):
+        try:
+            agent_host.startMission(my_mission, my_client_pool, my_mission_record, role, expID)
+            break
+        except RuntimeError as e:
+            if retry == max_retries - 1:
+                print("Error starting mission:", e)
+                exit(1)
+            else:
+                time.sleep(2)
 
-class Moobloom(gym.Env):
+def safeWaitForStart(agent_hosts):
+    start_flags = [False for a in agent_hosts]
+    start_time = time.time()
+    time_out = 230
+    while not all(start_flags) and time.time() - start_time < time_out:
+        states = [a.peekWorldState() for a in agent_hosts]
+        start_flags = [w.has_mission_begun for w in states]
+        errors = [e for w in states for e in w.errors]
+        if len(errors) > 0:
+            print("Errors waiting for mission start:")
+            for e in errors:
+                print(e.text)
+            exit(1)
+        time.sleep(0.1)
+        print(".", end=" ")
+    if time.time() - start_time >= time_out:
+        print("Timed out while waiting for mission to start.")
+        exit(1)
+    print()
+    print("Mission has started.")
+
+
+
+
+class TheWalkingDead(gym.Env):
 
     def __init__(self, env_config):  
         # Static Parameters
-        self.size = 5
+        self.size = 10
         self.reward_density = .1
         self.penalty_density = .02
         self.obs_size = 7
@@ -38,11 +75,13 @@ class Moobloom(gym.Env):
                                              
         }
         # Rllib Parameters
+        self.num_items_in_observation_array = 2
         self.action_space =  Discrete(len(self.action_dict)) 
-        self.observation_space = Box(0, 1, shape=(self.obs_size * self.obs_size, ), dtype=np.float32)
+        self.observation_space = Box(0, 1, shape=(self.num_items_in_observation_array * self.obs_size * self.obs_size, ), dtype=np.float32)
 
         # Malmo Parameters
         self.agent_host = MalmoPython.AgentHost()
+        self.video_host = MalmoPython.AgentHost()
         try:
             self.agent_host.parse( sys.argv )
         except RuntimeError as e:
@@ -50,9 +89,12 @@ class Moobloom(gym.Env):
             print(self.agent_host.getUsage())
             exit(1)
 
-        # Moobloom Parameters
+        # TheWalkingDead Parameters
         self.facing_zombie = False
-        self.num_zombies = 1
+        self.facing_creeper = False
+        self.facing_wall = False
+        self.num_zombies = 2
+        self.num_creepers = 2
         self.damage_taken_so_far = 0
         self.new_damage_taken = 0
         self.obs = None
@@ -61,7 +103,7 @@ class Moobloom(gym.Env):
         self.episode_return = 0
         self.returns = []
         self.steps = []
-        self.max_episode_steps = 100
+        self.max_episode_steps = 200
 
     def reset(self):
         """
@@ -103,8 +145,13 @@ class Moobloom(gym.Env):
             done: <bool> indicates terminal state
             info: <dict> dictionary of extra information
         """
+        # Get night vision
+        if self.is_begin:
+            self.agent_host.sendCommand('chat /effect @p night_vision 999 99')
+            self.is_begin = False
+
         # Get Action
-        if action != 'move 1' or not self.facing_zombie:
+        if action != 'move 1' or (not self.facing_zombie and not self.facing_creeper):
             command = self.action_dict[action]
             self.agent_host.sendCommand(command)
             self.episode_step += 1
@@ -129,24 +176,15 @@ class Moobloom(gym.Env):
         return self.obs, reward, done, dict()
 
     def get_mission_xml(self):
-#         # Draw walls around the arena
-#         # Draw west wall
-#         west_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, -self.size-1, self.size, -self.size) + \
-#                         "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, -self.size-1, self.size, -self.size)
-#                         
-#         east_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='stone'/>".format(self.size+1, self.size+1, self.size, -self.size) + \
-#                         "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='stone'/>".format(self.size+1, self.size+1, self.size, -self.size)
-# 
-#         north_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, self.size+1, self.size, self.size) + \
-#                          "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, self.size+1, self.size, self.size)
-#                          
-#         south_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, self.size+1, -self.size, -self.size) + \
-#                          "<DrawCuboid x1='{}' x2='{}' y1='3' y2='3' z1='{}' z2='{}' type='stone'/>".format(-self.size-1, self.size+1, -self.size, -self.size)
-
+        # Draw walls around the arena
+        # west_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='5' z1='{}' z2='{}' type='end_portal_frame'/>".format(-self.size-1, -self.size-1, self.size, -self.size)                      
+        # east_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='5' z1='{}' z2='{}' type='end_portal_frame'/>".format(self.size+1, self.size+1, self.size, -self.size)
+        # north_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='5' z1='{}' z2='{}' type='end_portal_frame'/>".format(-self.size-1, self.size+1, self.size, self.size)                   
+        # south_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='5' z1='{}' z2='{}' type='end_portal_frame'/>".format(-self.size-1, self.size+1, -self.size, -self.size)
+        # walls_xml = west_wall_xml + east_wall_xml + north_wall_xml + south_wall_xml
 
         zombies_xml = []
         zombie_locations = set()
-   
         for i in range(self.num_zombies):
             x = random.randint(-self.size,self.size + 1)
             z = random.randint(-self.size,self.size + 1)
@@ -154,15 +192,26 @@ class Moobloom(gym.Env):
                 x = random.randint(-self.size,self.size + 1)
                 z = random.randint(-self.size,self.size + 1)
             zombie_locations.add((x,z))
-            zombies_xml.append("<DrawEntity x='"+str(x)+"' y='2' z='"+str(z)+"' type='Zombie' />")
-         
+            zombies_xml.append("<DrawEntity x='"+str(x)+"' y='2' z='"+str(z)+"' type='Zombie' />")     
         zombies_xml = ''.join(zombies_xml)
+
+        creepers_xml = []
+        creeper_locations = set()
+        for i in range(self.num_creepers):
+            x = random.randint(-self.size,self.size + 1)
+            z = random.randint(-self.size,self.size + 1)
+            while (x,z) in creeper_locations:
+                x = random.randint(-self.size,self.size + 1)
+                z = random.randint(-self.size,self.size + 1)
+            creeper_locations.add((x,z))
+            creepers_xml.append("<DrawEntity x='"+str(x)+"' y='2' z='"+str(z)+"' type='Creeper' />")     
+        creepers_xml = ''.join(creepers_xml)
 
         return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
                     <About>
-                        <Summary>Diamond Collector</Summary>
+                        <Summary>TheWalkingDead</Summary>
                     </About>
 
                     <ServerSection>
@@ -177,9 +226,10 @@ class Moobloom(gym.Env):
                         <ServerHandlers>
                             <FlatWorldGenerator generatorString="3;7,2;1;"/>
                             <DrawingDecorator>''' + \
-                                "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='air'/>".format(-900, 900, -900, 900) + \
-                                "<DrawCuboid x1='{}' x2='{}' y1='1' y2='1' z1='{}' z2='{}' type='stone'/>".format(-self.size, self.size, -self.size, self.size) + \
+                                "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='air'/>".format(-300, 300, -300, 300) + \
+                                "<DrawCuboid x1='{}' x2='{}' y1='1' y2='1' z1='{}' z2='{}' type='obsidian'/>".format(-self.size-100, self.size+100, -self.size-100, self.size+100) + \
                                 zombies_xml + \
+                                creepers_xml + \
                                 '''<DrawBlock x='0'  y='2' z='0' type='air' />
                             </DrawingDecorator>
                             <ServerQuitWhenAnyAgentFinishes/>
@@ -187,13 +237,14 @@ class Moobloom(gym.Env):
                     </ServerSection>
 
                     <AgentSection mode="Survival">
-                        <Name>CS175Moobloom</Name>
+                        <Name>CS175TheWalkingDead</Name>
                         <AgentStart>
                             <Placement x="0.5" y="2" z="0.5" pitch="45" yaw="0"/>
                         </AgentStart>
                         <AgentHandlers>''' + \
                             f'''<ObservationFromNearbyEntities>
                                 <Range name="Zombie" xrange="{self.obs_size//2}" yrange="1" zrange="{self.obs_size//2}"/>
+                                <Range name="Creeper" xrange="{self.obs_size//2}" yrange="1" zrange="{self.obs_size//2}"/>
                             </ObservationFromNearbyEntities>
                             <ObservationFromFullStats/>
                             <ObservationFromRay/>
@@ -203,6 +254,20 @@ class Moobloom(gym.Env):
                             <AgentQuitFromReachingCommandQuota total="'''+str(self.max_episode_steps)+'''" />
                         </AgentHandlers>
                     </AgentSection>
+
+                    <AgentSection mode="Survival">
+                        <Name>VideoAgent</Name>
+                        <AgentStart>
+                            <Placement x="0.5" y="5" z="0.5" pitch="45" yaw="0"/>
+                        </AgentStart>
+                        <AgentHandlers>
+                            <DiscreteMovementCommands/>
+                            <VideoProducer>
+                                <Width>860</Width>
+                                <Height>480</Height>
+                            </VideoProducer>
+                        </AgentHandlers>
+                    </AgentSection>
                 </Mission>'''
 
     def init_malmo(self):
@@ -210,25 +275,24 @@ class Moobloom(gym.Env):
         Initialize new malmo mission.
         """
         self.is_begin = True
+        malmoutils.parse_command_line(self.video_host)
+
         my_mission = MalmoPython.MissionSpec(self.get_mission_xml(), True)
+
         my_mission_record = MalmoPython.MissionRecordSpec()
+        video_recording_spec = MalmoPython.MissionRecordSpec()
         my_mission.requestVideo(800, 500)
         my_mission.setViewpoint(1)
 
-        max_retries = 3
         my_clients = MalmoPython.ClientPool()
         my_clients.add(MalmoPython.ClientInfo('127.0.0.1', 10000)) # add Minecraft machines here as available
+        my_clients.add(MalmoPython.ClientInfo('127.0.0.1', 10001))
+        my_clients.add(MalmoPython.ClientInfo('127.0.0.1', 10002))
 
-        for retry in range(max_retries):
-            try:
-                self.agent_host.startMission( my_mission, my_clients, my_mission_record, 0, 'Moobloom' )
-                break
-            except RuntimeError as e:
-                if retry == max_retries - 1:
-                    print("Error starting mission:", e)
-                    exit(1)
-                else:
-                    time.sleep(2)
+        safeStartMission(self.agent_host, my_mission, my_clients, my_mission_record, 0, '')
+        safeStartMission(self.video_host, my_mission, my_clients, video_recording_spec, 1, '')
+        safeWaitForStart([self.video_host, self.agent_host])
+
                     
         world_state = self.agent_host.getWorldState()
         while not world_state.has_mission_begun:
@@ -251,7 +315,7 @@ class Moobloom(gym.Env):
             observation: <np.array> the state observation
         """
         
-        obs = np.zeros((self.obs_size * self.obs_size, ))
+        obs = np.zeros((self.num_items_in_observation_array * self.obs_size * self.obs_size, ))
         
         while world_state.is_mission_running:
             time.sleep(0.1)
@@ -264,7 +328,11 @@ class Moobloom(gym.Env):
                 msg = world_state.observations[-1].text
                 observations = json.loads(msg)
                 i = 0
-                while 'DamageTaken' not in observations or 'Zombie' not in observations or 'Yaw' not in observations or 'LineOfSight' not in observations:
+                while 'DamageTaken' not in observations or \
+                'Zombie' not in observations or \
+                'Creeper' not in observations or \
+                'Yaw' not in observations or \
+                'LineOfSight' not in observations:
                     i += 1
                     if i == 5:
                         observations = self.prev_observation
@@ -273,7 +341,7 @@ class Moobloom(gym.Env):
                     msg = world_state.observations[-1].text
                     observations = json.loads(msg)
                     print(observations)
-                    print(2)
+                    print(222222222222)
                 
                 self.prev_observation = observations
                 # Record any new damage that is taken for negative reward later
@@ -284,9 +352,11 @@ class Moobloom(gym.Env):
                 # Get observation
                 agent_location = None
                 for entity in observations['Zombie']:
-                    if entity['name'] == 'CS175Moobloom':
+                    if entity['name'] == 'CS175TheWalkingDead':
                         agent_location = (entity['x']+self.obs_size//2, entity['z']+self.obs_size//2)
-                        break                   
+                        break                 
+
+                # Get zombie locations  
                 zombie_locations = list((agent_location[0]-entity['x'], agent_location[1]-entity['z']) for entity in observations['Zombie'] if entity['name'] == 'Zombie')                              
                 for i in range(self.obs_size * self.obs_size):
                     obs[i] = False  
@@ -294,12 +364,16 @@ class Moobloom(gym.Env):
                 for x,z in zombie_locations:
                     obs[math.floor(z) + math.floor(x) * self.obs_size] = True 
 
-#                 grid = observations['floorAll']
-#                 for i, x in enumerate(grid):
-#                     obs[i] = x == 'diamond_ore' or x == 'lava'
+                # Get creeper locations  
+                creeper_locations = list((agent_location[0]-entity['x'], agent_location[1]-entity['z']) for entity in observations['Creeper'] if entity['name'] == 'Creeper')                              
+                for i in range(self.obs_size ** 2, 2 * self.obs_size ** 2):
+                    obs[i] = False  
+                    
+                for x,z in creeper_locations:
+                    obs[self.obs_size ** 2 + math.floor(z) + math.floor(x) * self.obs_size] = True 
 
                 # Rotate observation with orientation of agent
-                obs = obs.reshape((1, self.obs_size, self.obs_size))
+                obs = obs.reshape((self.num_items_in_observation_array, self.obs_size, self.obs_size))
                 yaw = observations['Yaw']
                 if yaw >= 225 and yaw < 315:
                     obs = np.rot90(obs, k=1, axes=(1, 2))
@@ -311,6 +385,7 @@ class Moobloom(gym.Env):
 
                 # Check if there is a zombie in front of agent
                 self.facing_zombie = observations['LineOfSight']['type'] == 'Zombie'
+                self.facing_creeper = observations['LineOfSight']['type'] == 'Creeper'
                 
                 break
         
@@ -328,7 +403,7 @@ class Moobloom(gym.Env):
         returns_smooth = np.convolve(self.returns[1:], box, mode='same')
         plt.clf()
         plt.plot(self.steps[1:], returns_smooth)
-        plt.title('Moobloom')
+        plt.title('TheWalkingDead')
         plt.ylabel('Return')
         plt.xlabel('Steps')
         plt.savefig('returns.png')
@@ -340,14 +415,14 @@ class Moobloom(gym.Env):
 
 if __name__ == '__main__':
     ray.init()
-    trainer = ppo.PPOTrainer(env=Moobloom, config={
+    trainer = ppo.PPOTrainer(env=TheWalkingDead, config={
         'env_config': {},           # No environment parameters to configure
         'framework': 'torch',       # Use pyotrch instead of tensorflow
-        'num_gpus': 0,              # We aren't using GPUs
+        'num_gpus': 1,              # We aren't using GPUs
         'num_workers': 0            # We aren't using parallelism
     })
 
-    #trainer.load_checkpoint("C:\\Users\\Owner\\Desktop\\Malmo\\Python_Examples\\checkpoint-36")
+    # trainer.load_checkpoint("C:\\Users\\Owner\\Desktop\\Malmo\\Python_Examples\\checkpoint-36")
     i = 0
     while True:
         print(trainer.train())
