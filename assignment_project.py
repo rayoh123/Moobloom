@@ -147,7 +147,7 @@ class TheWalkingDead(gym.Env):
         """
         # Get night vision
         if self.is_begin:
-            self.agent_host.sendCommand('chat /effect @p night_vision 999 99')
+            self.agent_host.sendCommand('chat /effect @e night_vision 99 99')
             self.is_begin = False
 
         # Get Action
@@ -237,7 +237,7 @@ class TheWalkingDead(gym.Env):
                     </ServerSection>
 
                     <AgentSection mode="Survival">
-                        <Name>CS175TheWalkingDead</Name>
+                        <Name>Walking</Name>
                         <AgentStart>
                             <Placement x="0.5" y="2" z="0.5" pitch="45" yaw="0"/>
                         </AgentStart>
@@ -255,10 +255,10 @@ class TheWalkingDead(gym.Env):
                         </AgentHandlers>
                     </AgentSection>
 
-                    <AgentSection mode="Survival">
+                    <AgentSection mode="Spectator">
                         <Name>VideoAgent</Name>
                         <AgentStart>
-                            <Placement x="0.5" y="5" z="0.5" pitch="45" yaw="0"/>
+                            <Placement x="0" y="10" z="-5" pitch="60" yaw="0"/>
                         </AgentStart>
                         <AgentHandlers>
                             <DiscreteMovementCommands/>
@@ -352,7 +352,7 @@ class TheWalkingDead(gym.Env):
                 # Get observation
                 agent_location = None
                 for entity in observations['Zombie']:
-                    if entity['name'] == 'CS175TheWalkingDead':
+                    if entity['name'] == 'Walking':
                         agent_location = (entity['x']+self.obs_size//2, entity['z']+self.obs_size//2)
                         break                 
 
