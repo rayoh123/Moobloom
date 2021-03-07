@@ -28,6 +28,20 @@
     </script>
 
     <link rel="stylesheet" href="{{ 'css/custom.css' | relative_url }}">
+    <style>
+
+/* Header/Logo Title */
+.header {
+  padding: 60px;
+  text-align: center;
+  background: #1abc9c;
+  color: white;
+  font-size: 30px;
+}
+
+/* Page Content */
+.content {padding:20px;}
+</style>
   </head>
   <body>
 
@@ -78,7 +92,7 @@
     </nav>
 
     <div class="container">
-      <div class="page-header">
+      <div class="header">
         <h2>
         {{ site.title }}
         <small>{{ site.subtitle }}</small>
