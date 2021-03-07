@@ -25,7 +25,7 @@ class TheWalkingDead(gym.Env):
         self.size = 10
         self.reward_density = .1
         self.penalty_density = .02
-        self.obs_size = 11
+        self.obs_size = 9
         self.max_episode_steps = 100
         self.log_frequency = 10
         self.action_dict = {
@@ -108,7 +108,7 @@ class TheWalkingDead(gym.Env):
             info: <dict> dictionary of extra information
         """
         # Get night vision
-        if self.is_begin:
+        if self.episode_step == 1:
             self.agent_host.sendCommand('chat /effect @p night_vision 999 99')
             self.is_begin = False
 
