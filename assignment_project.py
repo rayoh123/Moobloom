@@ -23,7 +23,7 @@ class TheWalkingDead(gym.Env):
 
     def __init__(self, env_config):
         # Static Parameters
-        self.size = 5
+        self.size = 11
         self.reward_density = .1
         self.penalty_density = .02
         self.obs_size = 7
@@ -142,18 +142,17 @@ class TheWalkingDead(gym.Env):
         # Draw walls around the arena
         # Draw west wall
         west_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='6' z1='{}' z2='{}' type='obsidian'/>".format(
-                            -self.size - 1, -self.size - 1, self.size + 1, -self.size - 1)
+                            -self.size - 1, -self.size - 1, 2*self.size + 1, -self.size - 1)
         east_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='6' z1='{}' z2='{}' type='obsidian'/>".format(
-                            self.size + 1, self.size + 1, self.size + 1, -self.size - 1)
+                            self.size + 1, self.size + 1, 2*self.size + 1, -self.size - 1)
         north_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='6' z1='{}' z2='{}' type='obsidian'/>".format(
-                            -self.size - 1, self.size + 1, self.size + 1, self.size + 1)
+                            -self.size - 1, self.size + 1, 2*self.size + 1, 2*self.size + 1)
         south_wall_xml = "<DrawCuboid x1='{}' x2='{}' y1='2' y2='5' z1='{}' z2='{}' type='obsidian'/>".format(
                             -self.size - 1, self.size + 1, -self.size - 1, -self.size - 1)
         walls_xml = west_wall_xml + east_wall_xml + north_wall_xml + south_wall_xml
-
         finishline = ''
-        x = self.size - 1
-        for z in range(-self.size, self.size):
+        z = 2*self.size - 1
+        for x in range(-self.size, self.size):
             finishline += f'<DrawBlock x=\'{x}\' y=\'1\' z = \'{z}\' type=\'diamond_block\' />'
             finishline += '\n' 
 
@@ -208,11 +207,11 @@ class TheWalkingDead(gym.Env):
                         
                         <AgentSection mode="Survival">
                            <Name>CS175TheWalkingDead</Name>
-                           <AgentStart>
-                               <Placement x="0.5" y="2" z="0.5" pitch="45" yaw="0"/>
+                           <AgentStart>''' + \
+                               f'''<Placement x="0" y="2" z="0" pitch="45" yaw="0"/>
                            </AgentStart>
-                           <AgentHandlers>''' + \
-                           f'''<ObservationFromNearbyEntities>
+                           <AgentHandlers>
+                           <ObservationFromNearbyEntities>
                                 <Range name="Zombie" xrange="{self.obs_size // 2}" yrange="1" zrange="{self.obs_size // 2}"/>
                                 <Range name="Creeper" xrange="{self.obs_size // 2}" yrange="1" zrange="{self.obs_size // 2}"/>
                             </ObservationFromNearbyEntities>
