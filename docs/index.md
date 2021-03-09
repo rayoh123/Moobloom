@@ -7,6 +7,7 @@ title:  Home
 ### PROJECT SUMMARY:
 #### The goal of our project is to train our agent to be adept at evading hostile mobs such as zombies, skeletons, and creepers while learning that passive mobs like cows, sheep, and pigs are safe. This is an interesting thing to do because a common issue for Minecraft players is trying to avoid death via hostile mobs in their first few in-game nights. It will be interesting to see if an AI trained with reinforcement learning would be able to mimick the same escape strategies employed by human players.
 
+
 ### REPORTS:
 - [Proposal](proposal.html)
 - [Status](status.html)
@@ -22,6 +23,7 @@ title:  Home
 ##### This is an interesting explanation of how to do something slightly similar to what we are attempting.
 
 ##### [quickref]: https://github.com/mundimark/quickrefs/blob/master/HTML.md
+
 
 
 ![](Resources/THEWALKINGDEAD.gif)  

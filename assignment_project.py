@@ -4,7 +4,7 @@ try:
     from malmo import MalmoPython
 except:
     import MalmoPython
-
+import malmoutils
 import sys
 import time
 from pathlib import Path
@@ -17,6 +17,43 @@ import random
 import gym, ray
 from gym.spaces import Discrete, Box
 from ray.rllib.agents import ppo
+
+def safeStartMission(agent_host, my_mission, my_client_pool, my_mission_record, role, expID):
+    print("Starting Mission {}.".format(role))
+    max_retries = 5
+    for retry in range(max_retries):
+        try:
+            agent_host.startMission(my_mission, my_client_pool, my_mission_record, role, expID)
+            break
+        except RuntimeError as e:
+            if retry == max_retries - 1:
+                print("Error starting mission:", e)
+                exit(1)
+            else:
+                time.sleep(2)
+
+def safeWaitForStart(agent_hosts):
+    start_flags = [False for a in agent_hosts]
+    start_time = time.time()
+    time_out = 230
+    while not all(start_flags) and time.time() - start_time < time_out:
+        states = [a.peekWorldState() for a in agent_hosts]
+        start_flags = [w.has_mission_begun for w in states]
+        errors = [e for w in states for e in w.errors]
+        if len(errors) > 0:
+            print("Errors waiting for mission start:")
+            for e in errors:
+                print(e.text)
+            exit(1)
+        time.sleep(0.1)
+        print(".", end=" ")
+    if time.time() - start_time >= time_out:
+        print("Timed out while waiting for mission to start.")
+        exit(1)
+    print()
+    print("Mission has started.")
+
+
 
 
 class TheWalkingDead(gym.Env):
@@ -38,6 +75,7 @@ class TheWalkingDead(gym.Env):
 
         # Malmo Parameters
         self.agent_host = MalmoPython.AgentHost()
+        self.video_host = MalmoPython.AgentHost()
         try:
             self.agent_host.parse(sys.argv)
         except RuntimeError as e:
@@ -104,6 +142,7 @@ class TheWalkingDead(gym.Env):
         # get night vision
         if self.episode_step == 1:
             self.agent_host.sendCommand('chat /effect @p night_vision 999 99')
+            self.agent_host.sendCommand('chat /effect VideoAgent night_vision 999 99')
             
         # Get Action
         if action != 'move 1' or (not self.facing_creeper and not self.facing_zombie and not self.facing_wall):
@@ -192,7 +231,7 @@ class TheWalkingDead(gym.Env):
                     </ServerSection>
 
                     <AgentSection mode="Survival">
-                        <Name>CS175TheWalkingDead</Name>
+                        <Name>TheWalkingDead</Name>
                         <AgentStart>
                             <Placement x="0.5" y="2" z="0.5" pitch="45" yaw="0"/>
                         </AgentStart>
@@ -215,6 +254,20 @@ class TheWalkingDead(gym.Env):
                             <AgentQuitFromReachingCommandQuota total="'''+str(self.max_episode_steps)+'''" />
                         </AgentHandlers>
                     </AgentSection>
+
+                    <AgentSection mode="Spectator">
+                        <Name>VideoAgent</Name>
+                        <AgentStart>
+                            <Placement x="0" y="10" z="-5" pitch="60" yaw="0"/>
+                        </AgentStart>
+                        <AgentHandlers>
+                            <DiscreteMovementCommands/>
+                            <VideoProducer>
+                                <Width>860</Width>
+                                <Height>480</Height>
+                            </VideoProducer>
+                        </AgentHandlers>
+                    </AgentSection>
                 </Mission>'''
 
 
@@ -223,25 +276,23 @@ class TheWalkingDead(gym.Env):
         Initialize new malmo mission.
         """
         self.is_begin = True
+        malmoutils.parse_command_line(self.video_host)
+
         my_mission = MalmoPython.MissionSpec(self.get_mission_xml(), True)
+
         my_mission_record = MalmoPython.MissionRecordSpec()
+        video_recording_spec = MalmoPython.MissionRecordSpec()
         my_mission.requestVideo(800, 500)
         my_mission.setViewpoint(1)
 
-        max_retries = 3
         my_clients = MalmoPython.ClientPool()
-        my_clients.add(MalmoPython.ClientInfo('127.0.0.1', 10000))  # add Minecraft machines here as available
+        my_clients.add(MalmoPython.ClientInfo('127.0.0.1', 10000)) # add Minecraft machines here as available
+        my_clients.add(MalmoPython.ClientInfo('127.0.0.1', 10001))
+        my_clients.add(MalmoPython.ClientInfo('127.0.0.1', 10002))
 
-        for retry in range(max_retries):
-            try:
-                self.agent_host.startMission(my_mission, my_clients, my_mission_record, 0, 'TheWalkingDead')
-                break
-            except RuntimeError as e:
-                if retry == max_retries - 1:
-                    print("Error starting mission:", e)
-                    exit(1)
-                else:
-                    time.sleep(2)
+        safeStartMission(self.agent_host, my_mission, my_clients, my_mission_record, 0, '')
+        safeStartMission(self.video_host, my_mission, my_clients, video_recording_spec, 1, '')
+        safeWaitForStart([self.video_host, self.agent_host])
 
         world_state = self.agent_host.getWorldState()
         while not world_state.has_mission_begun:
@@ -302,7 +353,7 @@ class TheWalkingDead(gym.Env):
                 # Get observation
                 agent_location = None
                 for entity in observations['Zombie']:
-                    if entity['name'] == 'CS175TheWalkingDead':
+                    if entity['name'] == 'TheWalkingDead':
                         agent_location = (entity['x']+self.obs_size//2, entity['z']+self.obs_size//2)
                         break                 
 
@@ -372,13 +423,13 @@ class TheWalkingDead(gym.Env):
 if __name__ == '__main__':
     ray.init()
     trainer = ppo.PPOTrainer(env=TheWalkingDead, config={
-        'env_config': {},  # No environment parameters to configure
-        'framework': 'torch',  # Use pyotrch instead of tensorflow
-        'num_gpus': 0,  # We aren't using GPUs
-        'num_workers': 0  # We aren't using parallelism
+        'env_config': {},           # No environment parameters to configure
+        'framework': 'torch',       # Use pyotrch instead of tensorflow
+        'num_gpus': 1,              # We aren't using GPUs
+        'num_workers': 0            # We aren't using parallelism
     })
 
-    # trainer.load_checkpoint(Path().absolute() + "\\checkpoint-36")
+    # trainer.load_checkpoint("C:\\Users\\Owner\\Desktop\\Malmo\\Python_Examples\\checkpoint-36")
     i = 0
     while True:
         print(trainer.train())
