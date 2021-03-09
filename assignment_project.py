@@ -248,10 +248,16 @@ class TheWalkingDead(gym.Env):
                                     <max x="'''+str(int(self.obs_size/2))+'''" y="2" z="'''+str(int(self.obs_size/2))+'''"/>
                                 </Grid>
                             </ObservationFromGrid>
+                            <RewardForTouchingBlockType>
+                                <Block type="diamond_block" reward="+300" />
+                            </RewardForTouchingBlockType>
                             <RewardForTimeTaken initialReward="10" delta="+2" density="PER_TICK" />
                             <DiscreteMovementCommands/>
                             <ChatCommands/>
                             <AgentQuitFromReachingCommandQuota total="'''+str(self.max_episode_steps)+'''" />
+                            <AgentQuitFromTouchingBlockType>
+                                <Block type="diamond_block" />
+                            </AgentQuitFromTouchingBlockType>
                         </AgentHandlers>
                     </AgentSection>
 
