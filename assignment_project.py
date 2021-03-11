@@ -89,6 +89,7 @@ class TheWalkingDead(gym.Env):
         self.facing_wall = False       
         self.num_zombies = 2
         self.num_creepers = 2
+        self.num_sheeps = 3
         self.damage_taken_so_far = 0
         self.new_damage_taken = 0
         self.obs = None
@@ -198,6 +199,7 @@ class TheWalkingDead(gym.Env):
 
         zombies_xml = mob_drawer('Zombie', self.num_zombies)
         creepers_xml = mob_drawer('Creeper', self.num_creepers)
+        sheeps_xml = mob_drawer('Sheep', self.num_sheep)
 
         return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -223,6 +225,7 @@ class TheWalkingDead(gym.Env):
                                 walls_xml + \
                                 zombies_xml + \
                                 creepers_xml + \
+                                sheeps_xml + \
                                 finishline + \
                                 '''<DrawBlock x='0'  y='2' z='0' type='air' />
                             </DrawingDecorator>
@@ -239,6 +242,7 @@ class TheWalkingDead(gym.Env):
                             f'''<ObservationFromNearbyEntities>
                                 <Range name="Zombie" xrange="{self.obs_size//2}" yrange="1" zrange="{self.obs_size//2}"/>
                                 <Range name="Creeper" xrange="{self.obs_size//2}" yrange="1" zrange="{self.obs_size//2}"/>
+                                <Range name="Sheep" xrange="{self.obs_size//2}" yrange="1" zrange="{self.obs_size//2}"/>
                             </ObservationFromNearbyEntities>
                             <ObservationFromFullStats/>
                             <ObservationFromRay/>
@@ -338,6 +342,7 @@ class TheWalkingDead(gym.Env):
                 while 'DamageTaken' not in observations or \
                 'Zombie' not in observations or \
                 'Creeper' not in observations or \
+                'Sheep' not in observations or \
                 'Yaw' not in observations or \
                 'LineOfSight' not in observations:
                     i += 1
@@ -378,7 +383,15 @@ class TheWalkingDead(gym.Env):
                     
                 for x,z in creeper_locations:
                     obs[self.obs_size ** 2 + math.floor(z) + math.floor(x) * self.obs_size] = True 
-
+                
+                 # Get sheep locations  
+                sheep_locations = list((agent_location[0]-entity['x'], agent_location[1]-entity['z']) for entity in observations['Sheep'] if entity['name'] == 'Sheep')                              
+                for i in range(self.obs_size ** 2, 2 * self.obs_size ** 2):
+                    obs[i] = False  
+                    
+                for x,z in sheep_locations:
+                    obs[self.obs_size ** 2 + math.floor(z) + math.floor(x) * self.obs_size] = True 
+                    
                 # Get wall locations
                 grid = observations['floorAll']
                 for i, x in enumerate(grid):
@@ -398,6 +411,7 @@ class TheWalkingDead(gym.Env):
                 # Check if there is a zombie in front of agent
                 self.facing_zombie = observations['LineOfSight']['type'] == 'Zombie'
                 self.facing_creeper = observations['LineOfSight']['type'] == 'Creeper'
+                self.facing_creeper = observations['LineOfSight']['type'] == 'Sheep'
                 self.facing_wall = observations['floorAll'][int((len(grid) ** 0.5) * ((len(grid) ** 0.5)//2-1) + (len(grid) ** 0.5)//2)] == 'end_portal_frame'
                 break
         
