@@ -199,7 +199,7 @@ class TheWalkingDead(gym.Env):
 
         zombies_xml = mob_drawer('Zombie', self.num_zombies)
         creepers_xml = mob_drawer('Creeper', self.num_creepers)
-        sheeps_xml = mob_drawer('Sheep', self.num_sheep)
+        sheeps_xml = mob_drawer('Sheep', self.num_sheeps)
 
         return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
