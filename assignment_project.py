@@ -18,44 +18,6 @@ import gym, ray
 from gym.spaces import Discrete, Box
 from ray.rllib.agents import ppo
 
-def safeStartMission(agent_host, my_mission, my_client_pool, my_mission_record, role, expID):
-    print("Starting Mission {}.".format(role))
-    max_retries = 5
-    for retry in range(max_retries):
-        try:
-            agent_host.startMission(my_mission, my_client_pool, my_mission_record, role, expID)
-            break
-        except RuntimeError as e:
-            if retry == max_retries - 1:
-                print("Error starting mission:", e)
-                exit(1)
-            else:
-                time.sleep(2)
-
-def safeWaitForStart(agent_hosts):
-    start_flags = [False for a in agent_hosts]
-    start_time = time.time()
-    time_out = 230
-    while not all(start_flags) and time.time() - start_time < time_out:
-        states = [a.peekWorldState() for a in agent_hosts]
-        start_flags = [w.has_mission_begun for w in states]
-        errors = [e for w in states for e in w.errors]
-        if len(errors) > 0:
-            print("Errors waiting for mission start:")
-            for e in errors:
-                print(e.text)
-            exit(1)
-        time.sleep(0.1)
-        print(".", end=" ")
-    if time.time() - start_time >= time_out:
-        print("Timed out while waiting for mission to start.")
-        exit(1)
-    print()
-    print("Mission has started.")
-
-
-
-
 class TheWalkingDead(gym.Env):
 
     def __init__(self, env_config):
@@ -69,13 +31,12 @@ class TheWalkingDead(gym.Env):
             2: 'turn -1',  # Turn 90 degrees to the left
         }
         # Rllib Parameters
-        self.num_items_in_observation_array = 3
+        self.num_items_in_observation_array = 4
         self.action_space = Discrete(len(self.action_dict))
         self.observation_space = Box(0, 1, shape=(self.num_items_in_observation_array * self.obs_size * self.obs_size,), dtype=np.float32)
 
         # Malmo Parameters
         self.agent_host = MalmoPython.AgentHost()
-        self.video_host = MalmoPython.AgentHost()
         try:
             self.agent_host.parse(sys.argv)
         except RuntimeError as e:
@@ -84,12 +45,13 @@ class TheWalkingDead(gym.Env):
             exit(1)
 
         # TheWalkingDead Parameters
+        self.facing_sheep = False
         self.facing_zombie = False
         self.facing_creeper = False
         self.facing_wall = False       
         self.num_zombies = 2
         self.num_creepers = 2
-        self.num_sheeps = 3
+        self.num_sheep = 3
         self.damage_taken_so_far = 0
         self.new_damage_taken = 0
         self.obs = None
@@ -143,10 +105,9 @@ class TheWalkingDead(gym.Env):
         # get night vision
         if self.episode_step == 1:
             self.agent_host.sendCommand('chat /effect @p night_vision 999 99')
-            self.agent_host.sendCommand('chat /effect VideoAgent night_vision 999 99')
             
         # Get Action
-        if action != 'move 1' or (not self.facing_creeper and not self.facing_zombie and not self.facing_wall):
+        if action != 'move 1' or (not self.facing_sheep and not self.facing_creeper and not self.facing_zombie and not self.facing_wall):
             command = self.action_dict[action]
             self.agent_host.sendCommand(command)
             self.episode_step += 1
@@ -264,20 +225,6 @@ class TheWalkingDead(gym.Env):
                             </AgentQuitFromTouchingBlockType>
                         </AgentHandlers>
                     </AgentSection>
-
-                    <AgentSection mode="Spectator">
-                        <Name>VideoAgent</Name>
-                        <AgentStart>
-                            <Placement x="0" y="10" z="-5" pitch="60" yaw="0"/>
-                        </AgentStart>
-                        <AgentHandlers>
-                            <DiscreteMovementCommands/>
-                            <VideoProducer>
-                                <Width>860</Width>
-                                <Height>480</Height>
-                            </VideoProducer>
-                        </AgentHandlers>
-                    </AgentSection>
                 </Mission>'''
 
 
@@ -285,24 +232,25 @@ class TheWalkingDead(gym.Env):
         """
         Initialize new malmo mission.
         """
-        self.is_begin = True
-        malmoutils.parse_command_line(self.video_host)
-
         my_mission = MalmoPython.MissionSpec(self.get_mission_xml(), True)
-
         my_mission_record = MalmoPython.MissionRecordSpec()
-        video_recording_spec = MalmoPython.MissionRecordSpec()
         my_mission.requestVideo(800, 500)
         my_mission.setViewpoint(1)
 
+        max_retries = 3
         my_clients = MalmoPython.ClientPool()
         my_clients.add(MalmoPython.ClientInfo('127.0.0.1', 10000)) # add Minecraft machines here as available
-        my_clients.add(MalmoPython.ClientInfo('127.0.0.1', 10001))
-        my_clients.add(MalmoPython.ClientInfo('127.0.0.1', 10002))
 
-        safeStartMission(self.agent_host, my_mission, my_clients, my_mission_record, 0, '')
-        safeStartMission(self.video_host, my_mission, my_clients, video_recording_spec, 1, '')
-        safeWaitForStart([self.video_host, self.agent_host])
+        for retry in range(max_retries):
+            try:
+                self.agent_host.startMission( my_mission, my_clients, my_mission_record, 0, 'DiamondCollector' )
+                break
+            except RuntimeError as e:
+                if retry == max_retries - 1:
+                    print("Error starting mission:", e)
+                    exit(1)
+                else:
+                    time.sleep(2)
 
         world_state = self.agent_host.getWorldState()
         while not world_state.has_mission_begun:
@@ -386,16 +334,16 @@ class TheWalkingDead(gym.Env):
                 
                  # Get sheep locations  
                 sheep_locations = list((agent_location[0]-entity['x'], agent_location[1]-entity['z']) for entity in observations['Sheep'] if entity['name'] == 'Sheep')                              
-                for i in range(self.obs_size ** 2, 2 * self.obs_size ** 2):
+                for i in range(2 * (self.obs_size ** 2), 3 * self.obs_size ** 2):
                     obs[i] = False  
                     
                 for x,z in sheep_locations:
-                    obs[self.obs_size ** 2 + math.floor(z) + math.floor(x) * self.obs_size] = True 
+                    obs[2 * (self.obs_size ** 2) + math.floor(z) + math.floor(x) * self.obs_size] = True 
                     
                 # Get wall locations
                 grid = observations['floorAll']
                 for i, x in enumerate(grid):
-                    obs[2 * (self.obs_size ** 2) + i] = x == 'end_portal_frame'
+                    obs[3 * (self.obs_size ** 2) + i] = x == 'end_portal_frame'
 
                 # Rotate observation with orientation of agent
                 obs = obs.reshape((self.num_items_in_observation_array, self.obs_size, self.obs_size))
@@ -411,7 +359,7 @@ class TheWalkingDead(gym.Env):
                 # Check if there is a zombie in front of agent
                 self.facing_zombie = observations['LineOfSight']['type'] == 'Zombie'
                 self.facing_creeper = observations['LineOfSight']['type'] == 'Creeper'
-                self.facing_creeper = observations['LineOfSight']['type'] == 'Sheep'
+                self.facing_sheep = observations['LineOfSight']['type'] == 'Sheep'
                 self.facing_wall = observations['floorAll'][int((len(grid) ** 0.5) * ((len(grid) ** 0.5)//2-1) + (len(grid) ** 0.5)//2)] == 'end_portal_frame'
                 break
         
