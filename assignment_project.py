@@ -49,11 +49,13 @@ class TheWalkingDead(gym.Env):
         self.facing_zombie = False
         self.facing_creeper = False
         self.facing_wall = False       
-        self.num_zombies = 2
-        self.num_creepers = 2
+        self.num_zombies = 3
+        self.num_creepers = 3
         self.num_sheep = 3
         self.damage_taken_so_far = 0
         self.new_damage_taken = 0
+        self.prev_distance_from_diamonds = None
+        self.change_in_distance_from_diamonds = None
         self.obs = None
         self.prev_observation = None
         self.episode_step = 0
@@ -127,6 +129,7 @@ class TheWalkingDead(gym.Env):
             reward += r.getValue()
         reward -= self.new_damage_taken
         self.episode_return += reward
+        self.episode_return += 5 * -(self.change_in_distance_from_diamonds)
 
         return self.obs, reward, done, dict()
 
@@ -139,9 +142,8 @@ class TheWalkingDead(gym.Env):
         walls_xml = west_wall_xml + east_wall_xml + north_wall_xml + south_wall_xml
 
         finishline = ''
-        z = 2*self.size
         for x in range(-self.size, self.size+1):
-            finishline += f'<DrawBlock x=\'{x}\' y=\'1\' z = \'{z}\' type=\'diamond_block\' />'
+            finishline += f'<DrawBlock x=\'{x}\' y=\'1\' z = \'{2*self.size}\' type=\'diamond_block\' />'
             finishline += '\n' 
 
         def mob_drawer(entity_name: str, num_entities: int) -> str:
@@ -149,10 +151,10 @@ class TheWalkingDead(gym.Env):
             creature_locations = set([(-1,-1),(0,-1),(1,-1),(-1,0),(0,0),(1,0),(-1,1),(0,1),(1,1)])
             for i in range(num_entities):
                 x = random.randint(-self.size + 2, self.size-1)
-                z = random.randint(-self.size + 2, self.size-1)
+                z = random.randint(self.size, 2*self.size)
                 while (x, z) in creature_locations:
                     x = random.randint(-self.size + 2, self.size-1)
-                    z = random.randint(-self.size + 2, self.size-1)
+                    z = random.randint(self.size, 2*self.size)
                 creature_locations.add((x, z))
                 creature_xml.append("<DrawEntity x='" + str(x) + "' y='2' z='" + str(z) + f"' type='{entity_name}' />")
             creature_xml = ''.join(creature_xml)
@@ -216,7 +218,6 @@ class TheWalkingDead(gym.Env):
                             <RewardForTouchingBlockType>
                                 <Block type="diamond_block" reward="+300" />
                             </RewardForTouchingBlockType>
-                            <RewardForTimeTaken initialReward="10" delta="+2" density="PER_TICK" />
                             <DiscreteMovementCommands/>
                             <ChatCommands/>
                             <AgentQuitFromReachingCommandQuota total="'''+str(self.max_episode_steps)+'''" />
@@ -316,6 +317,11 @@ class TheWalkingDead(gym.Env):
                         agent_location = (entity['x']+self.obs_size//2, entity['z']+self.obs_size//2)
                         break                 
 
+                # Get distance from diamond blocks, and change in distance from diamond blocks since last observation
+                if self.prev_distance_from_diamonds != None:
+                    self.change_in_distance_from_diamonds = self.prev_distance_from_diamonds - abs(agent_location[1] - 2*self.size)
+                self.prev_distance_from_diamonds = abs(agent_location[1] - 2*self.size)
+
                 # Get zombie locations  
                 zombie_locations = list((agent_location[0]-entity['x'], agent_location[1]-entity['z']) for entity in observations['Zombie'] if entity['name'] == 'Zombie')                              
                 for i in range(self.obs_size * self.obs_size):
@@ -326,7 +332,7 @@ class TheWalkingDead(gym.Env):
 
                 # Get creeper locations  
                 creeper_locations = list((agent_location[0]-entity['x'], agent_location[1]-entity['z']) for entity in observations['Creeper'] if entity['name'] == 'Creeper')                              
-                for i in range(self.obs_size ** 2, 2 * self.obs_size ** 2):
+                for i in range(self.obs_size ** 2, 2 * (self.obs_size ** 2)):
                     obs[i] = False  
                     
                 for x,z in creeper_locations:
@@ -334,7 +340,7 @@ class TheWalkingDead(gym.Env):
                 
                  # Get sheep locations  
                 sheep_locations = list((agent_location[0]-entity['x'], agent_location[1]-entity['z']) for entity in observations['Sheep'] if entity['name'] == 'Sheep')                              
-                for i in range(2 * (self.obs_size ** 2), 3 * self.obs_size ** 2):
+                for i in range(2 * (self.obs_size ** 2), 3 * (self.obs_size ** 2)):
                     obs[i] = False  
                     
                 for x,z in sheep_locations:
@@ -397,7 +403,7 @@ if __name__ == '__main__':
         'num_workers': 0            # We aren't using parallelism
     })
 
-    # trainer.load_checkpoint("C:\\Users\\Owner\\Desktop\\Malmo\\Python_Examples\\checkpoint-36")
+    trainer.load_checkpoint("C:\\Users\\Owner\\Desktop\\Malmo\\Python_Examples\\checkpoint-82")
     i = 0
     while True:
         print(trainer.train())
