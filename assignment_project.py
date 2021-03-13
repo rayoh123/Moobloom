@@ -312,9 +312,11 @@ class TheWalkingDead(gym.Env):
 
                 # Get observation
                 agent_location = None
+                relative_agent_location = None
                 for entity in observations['Zombie']:
                     if entity['name'] == 'TheWalkingDead':
-                        agent_location = (entity['x']+self.obs_size//2, entity['z']+self.obs_size//2)
+                        agent_location = (entity['x'], entity['z'])
+                        relative_agent_location = (entity['x']+self.obs_size//2, entity['z']+self.obs_size//2)
                         break                 
 
                 # Get distance from diamond blocks, and change in distance from diamond blocks since last observation
@@ -323,7 +325,7 @@ class TheWalkingDead(gym.Env):
                 self.prev_distance_from_diamonds = abs(agent_location[1] - 2*self.size)
 
                 # Get zombie locations  
-                zombie_locations = list((agent_location[0]-entity['x'], agent_location[1]-entity['z']) for entity in observations['Zombie'] if entity['name'] == 'Zombie')                              
+                zombie_locations = list((relative_agent_location[0]-entity['x'], relative_agent_location[1]-entity['z']) for entity in observations['Zombie'] if entity['name'] == 'Zombie')                              
                 for i in range(self.obs_size * self.obs_size):
                     obs[i] = False  
                     
@@ -331,7 +333,7 @@ class TheWalkingDead(gym.Env):
                     obs[math.floor(z) + math.floor(x) * self.obs_size] = True 
 
                 # Get creeper locations  
-                creeper_locations = list((agent_location[0]-entity['x'], agent_location[1]-entity['z']) for entity in observations['Creeper'] if entity['name'] == 'Creeper')                              
+                creeper_locations = list((relative_agent_location[0]-entity['x'], relative_agent_location[1]-entity['z']) for entity in observations['Creeper'] if entity['name'] == 'Creeper')                              
                 for i in range(self.obs_size ** 2, 2 * (self.obs_size ** 2)):
                     obs[i] = False  
                     
@@ -339,7 +341,7 @@ class TheWalkingDead(gym.Env):
                     obs[self.obs_size ** 2 + math.floor(z) + math.floor(x) * self.obs_size] = True 
                 
                  # Get sheep locations  
-                sheep_locations = list((agent_location[0]-entity['x'], agent_location[1]-entity['z']) for entity in observations['Sheep'] if entity['name'] == 'Sheep')                              
+                sheep_locations = list((relative_agent_location[0]-entity['x'], relative_agent_location[1]-entity['z']) for entity in observations['Sheep'] if entity['name'] == 'Sheep')                              
                 for i in range(2 * (self.obs_size ** 2), 3 * (self.obs_size ** 2)):
                     obs[i] = False  
                     
@@ -403,7 +405,7 @@ if __name__ == '__main__':
         'num_workers': 0            # We aren't using parallelism
     })
 
-    trainer.load_checkpoint("C:\\Users\\Owner\\Desktop\\Malmo\\Python_Examples\\checkpoint-72")
+    # trainer.load_checkpoint("C:\\Users\\Owner\\Desktop\\Malmo\\Python_Examples\\checkpoint-72")
     i = 0
     while True:
         print(trainer.train())
