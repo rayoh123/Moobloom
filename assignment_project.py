@@ -23,12 +23,12 @@ class TheWalkingDead(gym.Env):
     def __init__(self, env_config):
         # Static Parameters
         self.size = 10
-        self.obs_size = 9   # This is the size of the observation grid
+        self.obs_size = 13   # This is the size of the observation grid
         self.log_frequency = 10
         self.action_dict = {
             0: 'move 1',  # Move one block forward
-            1: 'turn 1',  # Turn 90 degrees to the right
-            2: 'turn -1',  # Turn 90 degrees to the left
+            1: 'turn 1',
+            2: 'turn -1'
         }
         # Rllib Parameters
         self.num_items_in_observation_array = 4
@@ -49,9 +49,9 @@ class TheWalkingDead(gym.Env):
         self.facing_zombie = False
         self.facing_creeper = False
         self.facing_wall = False       
-        self.num_zombies = 3
+        self.num_zombies = 6
         self.num_creepers = 3
-        self.num_sheep = 3
+        self.num_sheep = 4
         self.damage_taken_so_far = 0
         self.new_damage_taken = 0
         self.prev_distance_from_diamonds = None
@@ -319,7 +319,7 @@ class TheWalkingDead(gym.Env):
 
                 # Get distance from diamond blocks, and change in distance from diamond blocks since last observation
                 if self.prev_distance_from_diamonds != None:
-                    self.change_in_distance_from_diamonds = self.prev_distance_from_diamonds - abs(agent_location[1] - 2*self.size)
+                    self.change_in_distance_from_diamonds = abs(agent_location[1] - 2*self.size) - self.prev_distance_from_diamonds
                 self.prev_distance_from_diamonds = abs(agent_location[1] - 2*self.size)
 
                 # Get zombie locations  
@@ -403,7 +403,7 @@ if __name__ == '__main__':
         'num_workers': 0            # We aren't using parallelism
     })
 
-    trainer.load_checkpoint("C:\\Users\\Owner\\Desktop\\Malmo\\Python_Examples\\checkpoint-82")
+    trainer.load_checkpoint("C:\\Users\\Owner\\Desktop\\Malmo\\Python_Examples\\checkpoint-72")
     i = 0
     while True:
         print(trainer.train())
