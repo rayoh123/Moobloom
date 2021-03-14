@@ -2,17 +2,17 @@
 layout: default
 title: Status
 ---
-## Video:
+## VIDEO:
 <iframe width="560" height="315" src="https://www.youtube.com/embed/Qjy7cKwEcpY" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-## Project Summary: 
+## PROJECT SUMMARY: 
 The goal of our project is to train our agent to be adept at evading hostile mobs such as zombies, 
 skeletons, and creepers while learning that passive mobs like cows, sheep, and pigs are safe. This is an
 interesting thing to do because a common issue for Minecraft players is trying to avoid death via hostile mobs 
 in their first few in-game nights. It will be interesting to see if an AI trained with reinforcement learning would 
 be able to mimick the same escape strategies employed by human players.
 
-## Approach: 
+## APPROACH: 
 We are training the AI to escape from hostile mobs using reinforcement learning. Our hope is that
 the agent will eventually learn to maximixe the distance between itself and any hostile mobs. To train our agent, we are using the
 model-free Proximal Policy Optimization (PPO) algorithm. The PPO algorithm's update equation is:  
@@ -34,7 +34,7 @@ given the agent the following rewards:
 - -n for every n healthpoints of damage that the agent takes from the zombie
 
 
-## Evaluation:  
+## EVALUATIONS:  
 ### Quantitative:  
 We can evaluate our agent's performance quantitatively by comparing the agent's average reward near the beginning of its 
 training to its average reward near the end of its training. If there is a noticable and significant increase in average 
@@ -61,7 +61,7 @@ However, at the end of training, the now-improved agent has realized that the wi
 
 <iframe src="https://giphy.com/embed/Whod3huunyABrj9vQo" width="480" height="270" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/Whod3huunyABrj9vQo">via GIPHY</a></p>  
 
-## Remaining Goals and Challenges:
+## REMAINING GOALS AND CHALLENGES:
 Our current prototype is limited because it performs the humanly easy task of escaping from a single zombie. In a regular game of Minecraft, 
 a human player will have to encounter more than one zombie. He or she will have to handle escaping from hostile mobs like skeletons and 
 creepers as well, both of which have harming capabilities that are more dangerous than that of zombies. 
@@ -81,7 +81,7 @@ Another difficulty is figuring out how to change the training so that the agent 
 (about 15 blocks), so it would prove a challenge for the agent to realize that it should stay much, much further away from skeletons than zombies and creepers. 
 We would need to figure out what new rewards we can add to ensure that the agent realizes that it has to stay a far distance away from skeletons. 
 
-## Resources Used:
+## RESOURCES USED:
 - [OpenAI PPO Algorithm](https://openai.com/blog/openai-baselines-ppo/) OpenAI's introduction to its PPO algorithm.
 - [OpenAI Hide and Seek](https://www.youtube.com/watch?v=Lu56xVlZ40M) Our project is inspired by this interesting AI project.
 - [Fighting Zombies in Minecraft with RL Research Paper](http://cs229.stanford.edu/proj2016/report/UdagawaLeeNarasimhan-FightingZombiesInMinecraftWithDeepReinforcementLearning-report.pdf) 
