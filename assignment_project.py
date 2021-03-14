@@ -4,7 +4,8 @@ try:
     from malmo import MalmoPython
 except:
     import MalmoPython
-import malmoutils
+
+#import malmoutils
 import sys
 import time
 from pathlib import Path
@@ -145,14 +146,21 @@ class TheWalkingDead(gym.Env):
         for x in range(-self.size, self.size+1):
             finishline += f'<DrawBlock x=\'{x}\' y=\'1\' z = \'{2*self.size}\' type=\'diamond_block\' />'
             finishline += '\n' 
+        
+        corridorXLocation = -self.size + 2
+        leftX = corridorXLocation - 1 
+        rightX = corridorXLocation + 1
 
+        leftCorridorWall = f"<DrawCuboid x1='{leftX}' x2='{leftX}' y1='2' y2='3' z1='{2*self.size - 3}' z2='{-self.size + 3}' type='stone'/>"
+        rightCorridorWall = f"<DrawCuboid x1='{rightX}' x2='{rightX}' y1='2' y2='3' z1='{2*self.size - 3}' z2='{-self.size + 3}' type='stone'/>"
+        
         def mob_drawer(entity_name: str, num_entities: int) -> str:
             creature_xml = []
             creature_locations = set([(-1,-1),(0,-1),(1,-1),(-1,0),(0,0),(1,0),(-1,1),(0,1),(1,1)])
             for i in range(num_entities):
                 x = random.randint(-self.size + 2, self.size-1)
                 z = random.randint(self.size, 2*self.size)
-                while (x, z) in creature_locations:
+                while (x, z) in creature_locations and x != leftX and x != rightX and x != corridorXLocation:
                     x = random.randint(-self.size + 2, self.size-1)
                     z = random.randint(self.size, 2*self.size)
                 creature_locations.add((x, z))
@@ -190,6 +198,8 @@ class TheWalkingDead(gym.Env):
                                 creepers_xml + \
                                 sheeps_xml + \
                                 finishline + \
+                                leftCorridorWall + \
+                                rightCorridorWall + \
                                 '''<DrawBlock x='0'  y='2' z='0' type='air' />
                             </DrawingDecorator>
                             <ServerQuitWhenAnyAgentFinishes/>
