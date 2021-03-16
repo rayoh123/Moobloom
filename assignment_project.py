@@ -32,7 +32,7 @@ class TheWalkingDead(gym.Env):
             2: 'turn -1'
         }
         # Rllib Parameters
-        self.num_items_in_observation_array = 4
+        self.num_items_in_observation_array = 5
         self.action_space = Discrete(len(self.action_dict))
         self.observation_space = Box(0, 1, shape=(self.num_items_in_observation_array * self.obs_size * self.obs_size,), dtype=np.float32)
 
@@ -50,20 +50,18 @@ class TheWalkingDead(gym.Env):
         self.facing_zombie = False
         self.facing_creeper = False
         self.facing_wall = False       
-        self.num_zombies = 6
+        self.num_zombies = 4
         self.num_creepers = 3
-        self.num_sheep = 4
+        self.num_sheep = 2
         self.damage_taken_so_far = 0
         self.new_damage_taken = 0
-        self.prev_distance_from_diamonds = None
-        self.change_in_distance_from_diamonds = None
         self.obs = None
         self.prev_observation = None
         self.episode_step = 0
         self.episode_return = 0
         self.returns = []
         self.steps = []
-        self.max_episode_steps = 200
+        self.max_episode_steps = 300
 
     def reset(self):
         """
@@ -128,9 +126,8 @@ class TheWalkingDead(gym.Env):
         reward = 0
         for r in world_state.rewards:
             reward += r.getValue()
-        reward -= self.new_damage_taken
+        reward -= 5 * self.new_damage_taken
         self.episode_return += reward
-        self.episode_return += 5 * -(self.change_in_distance_from_diamonds)
 
         return self.obs, reward, done, dict()
 
@@ -151,18 +148,18 @@ class TheWalkingDead(gym.Env):
         leftX = corridorXLocation - 1 
         rightX = corridorXLocation + 1
 
-        leftCorridorWall = f"<DrawCuboid x1='{leftX}' x2='{leftX}' y1='2' y2='3' z1='{2*self.size - 3}' z2='{-self.size + 3}' type='stone'/>"
-        rightCorridorWall = f"<DrawCuboid x1='{rightX}' x2='{rightX}' y1='2' y2='3' z1='{2*self.size - 3}' z2='{-self.size + 3}' type='stone'/>"
+        leftCorridorWall = f"<DrawCuboid x1='{leftX}' x2='{leftX}' y1='2' y2='3' z1='{2*self.size - 3}' z2='{-self.size + 3}' type='end_portal_frame'/>"
+        rightCorridorWall = f"<DrawCuboid x1='{rightX}' x2='{rightX}' y1='2' y2='3' z1='{2*self.size - 3}' z2='{-self.size + 3}' type='end_portal_frame'/>"
         
         def mob_drawer(entity_name: str, num_entities: int) -> str:
             creature_xml = []
             creature_locations = set([(-1,-1),(0,-1),(1,-1),(-1,0),(0,0),(1,0),(-1,1),(0,1),(1,1)])
             for i in range(num_entities):
-                x = random.randint(-self.size + 2, self.size-1)
-                z = random.randint(self.size, 2*self.size)
-                while (x, z) in creature_locations and x != leftX and x != rightX and x != corridorXLocation:
-                    x = random.randint(-self.size + 2, self.size-1)
-                    z = random.randint(self.size, 2*self.size)
+                x = random.randint(-self.size + 2, self.size - 1)
+                z = random.randint(5, 2*self.size - 5)
+                while (x, z) in creature_locations and x > rightX:
+                    x = random.randint(-self.size + 2, self.size - 1)
+                    z = random.randint(5, 2*self.size-5)
                 creature_locations.add((x, z))
                 creature_xml.append("<DrawEntity x='" + str(x) + "' y='2' z='" + str(z) + f"' type='{entity_name}' />")
             creature_xml = ''.join(creature_xml)
@@ -226,8 +223,9 @@ class TheWalkingDead(gym.Env):
                                 </Grid>
                             </ObservationFromGrid>
                             <RewardForTouchingBlockType>
-                                <Block type="diamond_block" reward="+300" />
+                                <Block type="diamond_block" reward="+1000" />
                             </RewardForTouchingBlockType>
+                            <RewardForTimeTaken initialReward="10" delta="-2" density="PER_TICK" />
                             <DiscreteMovementCommands/>
                             <ChatCommands/>
                             <AgentQuitFromReachingCommandQuota total="'''+str(self.max_episode_steps)+'''" />
@@ -254,7 +252,7 @@ class TheWalkingDead(gym.Env):
 
         for retry in range(max_retries):
             try:
-                self.agent_host.startMission( my_mission, my_clients, my_mission_record, 0, 'DiamondCollector' )
+                self.agent_host.startMission( my_mission, my_clients, my_mission_record, 0, 'TheWalkingDead' )
                 break
             except RuntimeError as e:
                 if retry == max_retries - 1:
@@ -329,10 +327,10 @@ class TheWalkingDead(gym.Env):
                         relative_agent_location = (entity['x']+self.obs_size//2, entity['z']+self.obs_size//2)
                         break                 
 
-                # Get distance from diamond blocks, and change in distance from diamond blocks since last observation
-                if self.prev_distance_from_diamonds != None:
-                    self.change_in_distance_from_diamonds = abs(agent_location[1] - 2*self.size) - self.prev_distance_from_diamonds
-                self.prev_distance_from_diamonds = abs(agent_location[1] - 2*self.size)
+                # # Get distance from diamond blocks, and change in distance from diamond blocks since last observation
+                # if self.prev_distance_from_diamonds != None:
+                #     self.change_in_distance_from_diamonds = abs(agent_location[1] - 2*self.size) - self.prev_distance_from_diamonds
+                # self.prev_distance_from_diamonds = abs(agent_location[1] - 2*self.size)
 
                 # Get zombie locations  
                 zombie_locations = list((relative_agent_location[0]-entity['x'], relative_agent_location[1]-entity['z']) for entity in observations['Zombie'] if entity['name'] == 'Zombie')                              
@@ -362,6 +360,11 @@ class TheWalkingDead(gym.Env):
                 grid = observations['floorAll']
                 for i, x in enumerate(grid):
                     obs[3 * (self.obs_size ** 2) + i] = x == 'end_portal_frame'
+
+                # Get diamond blocks locations
+                grid = observations['floorAll']
+                for i, x in enumerate(grid):
+                    obs[4 * (self.obs_size ** 2) + i] = x == 'diamond_block'
 
                 # Rotate observation with orientation of agent
                 obs = obs.reshape((self.num_items_in_observation_array, self.obs_size, self.obs_size))
@@ -415,7 +418,7 @@ if __name__ == '__main__':
         'num_workers': 0            # We aren't using parallelism
     })
 
-    # trainer.load_checkpoint("C:\\Users\\Owner\\Desktop\\Malmo\\Python_Examples\\checkpoint-72")
+    trainer.load_checkpoint("C:\\Users\\Owner\\Desktop\\Malmo\\Python_Examples\\checkpoint-12")
     i = 0
     while True:
         print(trainer.train())
