@@ -74,15 +74,15 @@ are within a 6-block radius of the agent at each step.
 Here, we can see that the average number of hostile mobs around the agent decreases noticably throughout training, from 0.8 to 0.4.  
 __Approach&nbsp;#2__:  
 ![](Resources/diamond_rewards.png)  
-It increases from -250 to -100
+It increases from -250 to -100  
 ![](Resources/diamond_mobs.png)  
-It decreases from 1.4 to 0.8
+It decreases from 1.4 to 0.8  
 
 __Approach&nbsp;#3:(Corridor)__:  
 ![](Resources/corridor_rewards.png)  
-It increases from -100 to 200
+It increases from -100 to 200  
 ![](Resources/corridor_mobs.png)  
-It declines from 0.8 to 0.2
+It declines from 0.8 to 0.2  
 
 
 ## REFERENCES:
