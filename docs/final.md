@@ -63,7 +63,7 @@ We have created two graphs to better visualize the agent's improvement. The firs
 to obtain over its training. In order to see how the agent is improving in more detail, we generated a second graph is an average number of enemies graph, 
 which shows the average number of hostile mobs within a six block radius of the agent for each episode. 
 __Approach#1__:  
-![](Resources/simple_reward.png)  
+![](Resources/simple_returns.png)  
 
 As we can see, the graph shows that the agent's ability to obtain a higher reward improves over time. At first, the agent 
 moves around the field randomly, which leads to a -200 reward. However, as it trains, it is able to reach a much-higher 
@@ -73,13 +73,13 @@ are within a 6-block radius of the agent at each step.
 
 Here, we can see that the average number of hostile mobs around the agent decreases noticably throughout training, from 0.8 to 0.4.  
 __Approach&nbsp;#2__:  
-![](Resources/diamond_rewards.png)  
+![](Resources/diamond_returns.png)  
 It increases from -250 to -100  
 ![](Resources/diamond_mobs.png)  
 It decreases from 1.4 to 0.8  
 
 __Approach&nbsp;#3:(Corridor)__:  
-![](Resources/corridor_rewards.png)  
+![](Resources/corridor_returns.png)  
 It increases from -100 to 200  
 ![](Resources/corridor_mobs.png)  
 It declines from 0.8 to 0.2  
