@@ -30,7 +30,7 @@ blocks, would the agent eventually realize that this was the best path to take? 
 a well-lit path towards one's base instead of a dark one filled with hostile mobs.
 
 
-## EVALUATION: 
+## EVALUATION:  
 ### Qualitative 
 A good way to evaluate the performance of the agent is to judge how human its strategic decision-making is. For each of our approaches, we 
 will see how similarly the actions taken by the agent resemble actions that would be taken by human players if they were placed in the 
@@ -43,23 +43,46 @@ This is what the agent does in this situation. As we can see in the demonstratio
 continuously circles around the field. This allows it to lead the mobs on a wild goose chase in a circle. 
 
 INSERT GIF HERE
-<br>__Approach&nbsp;#2__:
-<br>__Approach&nbsp;#3__:
-### Quantitative
-<br>__Approach#1__:
-We have created multiple graphs to better visualize the agent's improvement. First, we have a 
-comprehensive rewards graph, which details the reward that the agent gets over time. 
-<br>INSERT REWARDS GRAPH HERE
-<br>As we can see, the graph shows that the agent's ability to obtain a higher reward improves over time. At first, the agent 
-moves around the field randomly, which leads to a SOMETHING reward. However, as it trains, it is able to reach a much-higher 
-SOMETHING reward. But in order to see how the agent is improving in more detail, we will also look at the damage that the agent takes over time from 
-hostile mobs. 
-<br>INSERT DAMAGE TAKEN GRAPH HERE
+<br>__Approach&nbsp;#2__:  
+INSERT DRAWN PIC OF SETUP  
+In this approach, the agent is placed on a football-field and has to get past the zombies and creepers in the center to reach the diamond blocks on the opposite side.
+To do this, a human might do something similar to a football game, where a player waits for a bit to see if there are gaps in the defense to run through. The 
+agent does something similar, 
+as it moves around for a bit at the back of the field to draw the mobs towards it and then suddenly rushes through gaps left by the mobs to reach the diamonds on the 
+other side.  
 
-<br>INSERT 
+INSERT GIF HERE  
+__Approach&nbsp;#3__:  
+INSERT PIC OF SETUP  
+In the third approach, the agent is placed in the same situation as the previous approach (a football field), but this time, we added a corridor. A human would 
+see that the most safe choice would be to use the corridor to evade the mobs and get to the diamond blocks on the other side. The agent eventually does exactly this.  
 
-<br>__Approach&nbsp;#2__:
-<br>__Approach&nbsp;#3__:
+INSERT GIF HERE  
+### Quantitative  
+We have created two graphs to better visualize the agent's improvement. The first graph is a rewards graph, which shows the reward that the agent is able 
+to obtain over its training. In order to see how the agent is improving in more detail, we generated a second graph is an average number of enemies graph, 
+which shows the average number of hostile mobs within a six block radius of the agent for each episode. 
+__Approach#1__:  
+![](Resources/simple_reward.png)  
+
+As we can see, the graph shows that the agent's ability to obtain a higher reward improves over time. At first, the agent 
+moves around the field randomly, which leads to a -200 reward. However, as it trains, it is able to reach a much-higher 
+reward of 50. But , we also generated a graph to see how many enemy mobs
+are within a 6-block radius of the agent at each step.  
+![](Resources/simple_mobs.png)  
+
+Here, we can see that the average number of hostile mobs around the agent decreases noticably throughout training, from 0.8 to 0.4.  
+__Approach&nbsp;#2__:  
+![](Resources/diamond_rewards.png)  
+It increases from -250 to -100
+![](Resources/diamond_mobs.png)  
+It decreases from 1.4 to 0.8
+
+__Approach&nbsp;#3:(Corridor)__:  
+![](Resources/corridor_rewards.png)  
+It increases from -100 to 200
+![](Resources/corridor_mobs.png)  
+It declines from 0.8 to 0.2
 
 
 ## REFERENCES:
