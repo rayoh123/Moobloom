@@ -64,7 +64,7 @@ as fast as possible, we gave the agent the following rewards:
 We hoped that by giving the agent a tangible goal to achieve, we could speed up training time. Unfortunately, this approach has the disadvantage of requiring the agent 
 to observe yet another item: the diamond blocks.  
 
-![Example setup for Approach #2](Resources/diamond_setup.png)
+<img src="Resources/diamond_setup.png" alt="drawing" width="1150" height="450"/>
 
 __Approach&nbsp;#3__:  
 Finally, out of curiosity, we decided to see if the agent would be able to detect paths of least resistance 
@@ -78,7 +78,7 @@ as fast as possible.
 - -n for every n healthpoints of damage that the agent takes
 - +500 for touching a diamond block  
  
- <img src="Resources/corridor_setup.png" alt="drawing" width="1150" height="430"/>
+ <img src="Resources/corridor_setup.png" alt="drawing" width="1150" height="450"/>
 
 We hoped that by adding a corridor, the agent's training time would be sped up now that it had an area to hide in.  
 
