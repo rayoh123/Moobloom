@@ -78,7 +78,7 @@ as fast as possible.
 - -n for every n healthpoints of damage that the agent takes
 - +500 for touching a diamond block  
  
-![Example setup for Approach #3](Resources/corridor_setup.png = 400x)  
+ <img src="Resources/corridor_setup.png" alt="drawing" width="200"/>
 
 We hoped that by adding a corridor, the agent's training time would be sped up now that it had an area to hide in.  
 
