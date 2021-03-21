@@ -118,7 +118,7 @@ We have created two graphs to better visualize the agent's improvement. The firs
 to obtain over its training. In order to see how the agent is improving in more detail, we generated a second graph is an average number of enemies graph, 
 which shows the average number of hostile mobs within a six block radius of the agent for each episode.  
 __Approach#1__: 
-![](Resources/simple_returns.png)  
+<br><img src="Resources/simple_returns.png" alt="drawing" width="640" height="480"/>
 
 As we can see, the graph shows that the agent's ability to obtain a higher reward improves over time. At first, the agent 
 moves around the field randomly, which leads to a -100 reward. However, as it trains, it is able to reach a much-higher 
