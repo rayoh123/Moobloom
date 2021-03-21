@@ -117,8 +117,8 @@ use the sheep to hide, but that did not occur.
 We have created two graphs to better visualize the agent's improvement. The first graph is a rewards graph, which shows the reward that the agent is able 
 to obtain over its training. In order to see how the agent is improving in more detail, we generated a second graph is an average number of enemies graph, 
 which shows the average number of hostile mobs within a six block radius of the agent for each episode.  
-__Approach#1__:  ffff
-![](Resources/simple_returns.png =450x480)  
+__Approach#1__: 
+![](Resources/simple_returns.png =400x300)  
 
 As we can see, the graph shows that the agent's ability to obtain a higher reward improves over time. At first, the agent 
 moves around the field randomly, which leads to a -100 reward. However, as it trains, it is able to reach a much-higher 
