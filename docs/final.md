@@ -129,28 +129,28 @@ are within a 6-block radius of the agent at each step.
 <br>
 <img src="Resources/simple_mobs.png" alt="drawing" width="640" height="480"/>
 
-Here, we can see that the average number of hostile mobs around the agent decreases noticably throughout training, from 0.8 to 0.4. This indicates
+<br>Here, we can see that the average number of hostile mobs around the agent decreases noticably throughout training, from 0.8 to 0.4. This indicates
 that the agent has learnt to stay away from hostile mobs.
 
 __Approach&nbsp;#2__:  
 
 <img src="Resources/diamond_returns.png" alt="drawing" width="640" height="480"/>
 
-Here, the rewards that the agent is able to obtain increases from -100 to 50 as well.  
+<br>Here, the rewards that the agent is able to obtain increases from -100 to 50 as well.  
 
 <img src="Resources/diamond_mobs.png" alt="drawing" width="640" height="480"/> 
 
-Meanwhile, the average number of hostile mobs within a 6-block radius decreases from 1.4 to 0.8.  
+<br>Meanwhile, the average number of hostile mobs within a 6-block radius decreases from 1.4 to 0.8.  
 
 __Approach&nbsp;#3:(Corridor)__:  
 
 <img src="Resources/corridor_returns.png" alt="drawing" width="640" height="480"/> 
 
-Here, the rewards that the agent is able to obtain increases from  increases from -200 to 100.  
+<br>Here, the rewards that the agent is able to obtain increases from  increases from -200 to 100.  
 
 <img src="Resources/corridor_mobs.png" alt="drawing" width="640" height="480"/> 
 
-Meanwhile, the average number of hostile mobs within a 6-block radius decreases from 0.8 to 0.2.  
+<br>Meanwhile, the average number of hostile mobs within a 6-block radius decreases from 0.8 to 0.2.  
 
 
 ## REFERENCES:
