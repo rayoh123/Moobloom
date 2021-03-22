@@ -31,7 +31,7 @@ intelligent actions to evade hostile mobs. In addition, its task would be made h
 creepers.  
 <iframe src="https://giphy.com/embed/Whod3huunyABrj9vQo" width="480" height="270" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/Whod3huunyABrj9vQo">via GIPHY</a></p>  
 
-#### __Approach&nbsp;#1__:  
+#### __Approach&nbsp;#1:&nbsp;(Simple&nbsp;Room)__:  
 This first approach is a very natural follow-up from our baseline. Instead of having an unbounded field where the agent can simply run off in a straight line, 
 we wanted to see what would happen if we made the field bounded. We placed our agent was placed in the center of an enclosed 20 by 20 block room, with 5-block-high walls made 
 of end portal frames and the floor covered with obsidian. In our prototype where we only dealt with a single zombie, so the floor was stone, but this would not work 
@@ -48,7 +48,7 @@ given the agent the following rewards:
 This approach has the advantage of being a simple setup, but the agent takes a very long time to train since there is no concrete goal for the agent to accomplish: it just 
 has to stay alive.
 
-#### __Approach&nbsp;#2__:  
+#### __Approach&nbsp;#2:&nbsp;(Diamond&nbsp;Row)__:  
 Next, we decided to make the environment more interesting. We realized that players often 
 make temporary shelters for their initial nights in Minecraft. And when players are caught outside at night, they have to return to it 
 without getting killed. To mimick such a scenario, we elongated the field into a football-field-like rectangle, where the agent spawns at one end of the field, the hostile mobs (2 zombies, creepers, and sheep) spawn 
@@ -66,7 +66,7 @@ to observe yet another item: the diamond blocks.
 
 <img src="Resources/diamond_setup.png" alt="drawing" width="1150" height="450"/>
 
-#### __Approach&nbsp;#3__:  
+#### __Approach&nbsp;#3:&nbsp;(Corridor)__:  
 Finally, out of curiosity, we decided to see if the agent would be able to detect paths of least resistance 
 towards the diamond blocks. For example, if there was a completely safe tunnel that was devoid of hostile mobs leading towards the diamond 
 blocks, would the agent eventually realize that this was the best path to take? In Minecraft gameplay, this would be analogous to taking 
@@ -87,7 +87,7 @@ We hoped that by adding a corridor, the agent's training time would be sped up n
 A good way to evaluate the performance of the agent is to judge how human its strategic decision-making is. For each of our approaches, we 
 will see how similarly the actions taken by the agent resemble actions that would be taken by human players if they were placed in the 
 same situations.  
-#### __Approach&nbsp;#1__:  
+#### __Approach&nbsp;#1:&nbsp;(Simple&nbsp;Room)__:  
 In Approach #1, the agent is stuck in a simple walled room with the mobs. In this situation, a human would absolutely not want to stand in the center, where it would 
 attract the maximal amount of hostile mobs. Instead, a human would stick close to the walls, where only 180 degrees of its body is exposed. 
 This is what the agent does in this situation. As we can see in the demonstration below, the agent sticks close to the walls and 
@@ -95,7 +95,7 @@ continuously circles around the field. This allows it to lead the mobs on a wild
 
 ![](Resources/gif_1.gif)  
 
-#### __Approach&nbsp;#2__:  
+#### __Approach&nbsp;#2:&nbsp;(Diamond&nbsp;Row)__:  
 In this approach, the agent is placed on a football-field and has to get past the zombies and creepers in the center to reach the diamond blocks on the opposite side.
 To do this, a human might do something similar to a football game, where a player waits for a bit to see if there are gaps in the defense to run through. The 
 agent does something similar, as it moves around for a bit at the back of the field to draw the mobs towards it and then suddenly turns around and runs through gaps left by the mobs to reach the diamonds on the 
@@ -103,7 +103,7 @@ other side.
 
 ![](Resources/gif_2.gif)  
 
-#### __Approach&nbsp;#3__:  
+#### __Approach&nbsp;#3:&nbsp;(Corridor)__:  
 In the third approach, the agent is placed in the same situation as the previous approach (a football field), but this time, we added a corridor. A human would 
 see that the most safe choice would be to use the corridor to evade the mobs and get to the diamond blocks on the other side. The agent eventually does exactly this.  
 
@@ -116,7 +116,7 @@ use the sheep to hide, but that did not occur.
 We have created two graphs to better visualize the agent's improvement. The first graph is a rewards graph, which shows the reward that the agent is able 
 to obtain over its training. In order to see how the agent is improving in more detail, we generated a second graph is an average number of enemies graph, 
 which shows the average number of hostile mobs within a six block radius of the agent for each episode.  
-#### __Approach#1__: 
+#### __Approach&nbsp;#1:&nbsp;(Simple&nbsp;Room)__:  
 <br>
 <br>
 <img src="Resources/simple_returns.png" alt="drawing" width="640" height="480"/>
@@ -131,7 +131,7 @@ are within a 6-block radius of the agent at each step.
 <br>Here, we can see that the average number of hostile mobs around the agent decreases noticably throughout training, from 0.8 to 0.4. This indicates
 that the agent has learnt to stay away from hostile mobs.
 
-#### __Approach&nbsp;#2__:  
+#### __Approach&nbsp;#2:&nbsp;(Diamond&nbsp;Row)__:  
 
 <img src="Resources/diamond_returns.png" alt="drawing" width="640" height="480"/>
 
@@ -141,7 +141,7 @@ that the agent has learnt to stay away from hostile mobs.
 
 <br>Meanwhile, the average number of hostile mobs within a 6-block radius decreases from 1.4 to 0.8.  
 
-#### __Approach&nbsp;#3:(Corridor)__:  
+#### __Approach&nbsp;#3:&nbsp;(Corridor)__:  
 
 <img src="Resources/corridor_returns.png" alt="drawing" width="640" height="480"/> 
 
