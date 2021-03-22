@@ -48,7 +48,7 @@ given the agent the following rewards:
 This approach has the advantage of being a simple setup, but the agent takes a very long time to train since there is no concrete goal for the agent to accomplish: it just 
 has to stay alive.
 
-#### __Approach&nbsp;#2:&nbsp;(Diamond&nbsp;Row)__:  
+#### __Approach&nbsp;#2:&nbsp;(Football)__:  
 Next, we decided to make the environment more interesting. We realized that players often 
 make temporary shelters for their initial nights in Minecraft. And when players are caught outside at night, they have to return to it 
 without getting killed. To mimick such a scenario, we elongated the field into a football-field-like rectangle, where the agent spawns at one end of the field, the hostile mobs (2 zombies, creepers, and sheep) spawn 
@@ -95,7 +95,7 @@ continuously circles around the field. This allows it to lead the mobs on a wild
 
 ![](Resources/gif_1.gif)  
 
-#### __Approach&nbsp;#2:&nbsp;(Diamond&nbsp;Row)__:  
+#### __Approach&nbsp;#2:&nbsp;(Football)__:  
 In this approach, the agent is placed on a football-field and has to get past the zombies and creepers in the center to reach the diamond blocks on the opposite side.
 To do this, a human might do something similar to a football game, where a player waits for a bit to see if there are gaps in the defense to run through. The 
 agent does something similar, as it moves around for a bit at the back of the field to draw the mobs towards it and then suddenly turns around and runs through gaps left by the mobs to reach the diamonds on the 
@@ -131,7 +131,7 @@ are within a 6-block radius of the agent at each step.
 <br>Here, we can see that the average number of hostile mobs around the agent decreases noticably throughout training, from 0.8 to 0.4. This indicates
 that the agent has learnt to stay away from hostile mobs.
 
-#### __Approach&nbsp;#2:&nbsp;(Diamond&nbsp;Row)__:  
+#### __Approach&nbsp;#2:&nbsp;(Football)__:  
 
 <img src="Resources/diamond_returns.png" alt="drawing" width="640" height="480"/>
 
