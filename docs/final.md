@@ -160,9 +160,9 @@ that the agent has learnt to stay away from hostile mobs.
 - [OpenAI Hide and Seek](https://www.youtube.com/watch?v=Lu56xVlZ40M) Our project is inspired by this interesting AI project.
 - [Fighting Zombies in Minecraft with RL Research Paper](http://cs229.stanford.edu/proj2016/report/UdagawaLeeNarasimhan-FightingZombiesInMinecraftWithDeepReinforcementLearning-report.pdf) 
 This is an interesting explanation of how to do something slightly similar to what we are attempting.
-- [Malmo Gitter] (https://gitter.im/Microsoft/malmo/archives/2017/08/07)
-- [Malmo XML Documentation] (https://microsoft.github.io/malmo/0.14.0/Schemas/Mission.html)
-- [List of Previous Projects] (https://canvas.eee.uci.edu/courses/30925/pages/list-of-projects)
+- [Malmo Gitter](https://gitter.im/Microsoft/malmo/archives/2017/08/07)
+- [Malmo XML Documentation](https://microsoft.github.io/malmo/0.14.0/Schemas/Mission.html)
+- [List of Previous Projects](https://canvas.eee.uci.edu/courses/30925/pages/list-of-projects)
 
 
 
