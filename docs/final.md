@@ -51,9 +51,11 @@ has to stay alive.
 #### __Approach&nbsp;#2:&nbsp;(Football)__:  
 Next, we decided to make the environment more interesting. We realized that players often 
 make temporary shelters for their initial nights in Minecraft. And when players are caught outside at night, they have to return to it 
-without getting killed. To mimick such a scenario, we elongated the field into a football-field-like rectangle, where the agent spawns at one end of the field, the hostile mobs (2 zombies, creepers, and sheep) spawn 
-in the middle, and a "touchdown" line of diamond blocks lie at the opposite end of the field. When the agent reaches the diamond blocks, 
-it receives a huge positive reward and the mission immediately ends.  Here, our diamond blocks are analogous to a player's base/shelter.
+without getting killed. To mimick such a scenario, we elongated the field into a football-field-like rectangle, where the agent spawns at one end of the field, 
+the hostile mobs spawn in the middle, and a "touchdown" line of diamond blocks lie at the opposite end of the field. 
+When the agent reaches the diamond blocks, 
+it receives a huge positive reward and the mission immediately ends. Here, our diamond blocks are analogous to a player's base/shelter.
+For this approach, we spawned in 2 zombies, 2 creepers, and 2 sheep.   
 
 Here, the rewards for the agent were altered. Since we are training the agent to both escape from hostile mobs and to reach the diamond blocks
 as fast as possible, we gave the agent the following rewards:  
@@ -70,7 +72,7 @@ to observe yet another item: the diamond blocks.
 Finally, out of curiosity, we decided to see if the agent would be able to detect paths of least resistance 
 towards the diamond blocks. For example, if there was a completely safe tunnel that was devoid of hostile mobs leading towards the diamond 
 blocks, would the agent eventually realize that this was the best path to take? In Minecraft gameplay, this would be analogous to taking 
-a well-lit path towards one's base instead of a dark one filled with hostile mobs.  
+a well-lit path towards one's base instead of a dark one filled with hostile mobs. We then spawned in 3 zombies, 2 creepers, and 2 sheep into this room at random locations.  
 
 Here, the rewards for the agent are the same as in Approach #2 since, again, we are training the agent to both escape from hostile mobs and to reach the diamond blocks
 as fast as possible.    
